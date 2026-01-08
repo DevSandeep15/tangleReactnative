@@ -11,6 +11,13 @@
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		D8D8CC48582649688A8CFD54 /* Montserrat-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8B78448A75D94977805DAAF2 /* Montserrat-Black.ttf */; };
+		585F0961C80747289BB5B407 /* Montserrat-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2DAD53A2F37741E2B477D94C /* Montserrat-Bold.ttf */; };
+		01BD7E5DB1B84C3D8141D697 /* Montserrat-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EF701C6945C1455594BA4786 /* Montserrat-ExtraBold.ttf */; };
+		74BE2C8D975A496DAEDE5DD6 /* Montserrat-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4A70143066814B1094C6CC98 /* Montserrat-Light.ttf */; };
+		D842242D52B642F785C6BC16 /* Montserrat-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C48E087EB4964F04AEB6AD61 /* Montserrat-Medium.ttf */; };
+		596135E4B83A4F06A9BCB6E9 /* Montserrat-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = ABB1E5832E6347618B8AE310 /* Montserrat-Regular.ttf */; };
+		B2974A7AB3774EA685615554 /* Montserrat-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 64667F5CD4D7480A93498121 /* Montserrat-SemiBold.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +31,13 @@
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Tangle/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Tangle/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		8B78448A75D94977805DAAF2 /* Montserrat-Black.ttf */ = {isa = PBXFileReference; name = "Montserrat-Black.ttf"; path = "../src/assets/font/Montserrat-Black.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		2DAD53A2F37741E2B477D94C /* Montserrat-Bold.ttf */ = {isa = PBXFileReference; name = "Montserrat-Bold.ttf"; path = "../src/assets/font/Montserrat-Bold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		EF701C6945C1455594BA4786 /* Montserrat-ExtraBold.ttf */ = {isa = PBXFileReference; name = "Montserrat-ExtraBold.ttf"; path = "../src/assets/font/Montserrat-ExtraBold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		4A70143066814B1094C6CC98 /* Montserrat-Light.ttf */ = {isa = PBXFileReference; name = "Montserrat-Light.ttf"; path = "../src/assets/font/Montserrat-Light.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		C48E087EB4964F04AEB6AD61 /* Montserrat-Medium.ttf */ = {isa = PBXFileReference; name = "Montserrat-Medium.ttf"; path = "../src/assets/font/Montserrat-Medium.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		ABB1E5832E6347618B8AE310 /* Montserrat-Regular.ttf */ = {isa = PBXFileReference; name = "Montserrat-Regular.ttf"; path = "../src/assets/font/Montserrat-Regular.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		64667F5CD4D7480A93498121 /* Montserrat-SemiBold.ttf */ = {isa = PBXFileReference; name = "Montserrat-SemiBold.ttf"; path = "../src/assets/font/Montserrat-SemiBold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +88,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				D6E056C15E5C40B3AD772CA7 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -96,6 +111,21 @@
 			);
 			path = Pods;
 			sourceTree = "<group>";
+		};
+		D6E056C15E5C40B3AD772CA7 /* Resources */ = {
+			isa = "PBXGroup";
+			children = (
+				8B78448A75D94977805DAAF2 /* Montserrat-Black.ttf */,
+				2DAD53A2F37741E2B477D94C /* Montserrat-Bold.ttf */,
+				EF701C6945C1455594BA4786 /* Montserrat-ExtraBold.ttf */,
+				4A70143066814B1094C6CC98 /* Montserrat-Light.ttf */,
+				C48E087EB4964F04AEB6AD61 /* Montserrat-Medium.ttf */,
+				ABB1E5832E6347618B8AE310 /* Montserrat-Regular.ttf */,
+				64667F5CD4D7480A93498121 /* Montserrat-SemiBold.ttf */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+			path = "";
 		};
 /* End PBXGroup section */
 
@@ -159,6 +189,13 @@
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				D8D8CC48582649688A8CFD54 /* Montserrat-Black.ttf in Resources */,
+				585F0961C80747289BB5B407 /* Montserrat-Bold.ttf in Resources */,
+				01BD7E5DB1B84C3D8141D697 /* Montserrat-ExtraBold.ttf in Resources */,
+				74BE2C8D975A496DAEDE5DD6 /* Montserrat-Light.ttf in Resources */,
+				D842242D52B642F785C6BC16 /* Montserrat-Medium.ttf in Resources */,
+				596135E4B83A4F06A9BCB6E9 /* Montserrat-Regular.ttf in Resources */,
+				B2974A7AB3774EA685615554 /* Montserrat-SemiBold.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
