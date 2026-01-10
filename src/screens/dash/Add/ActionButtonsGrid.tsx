@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { verticalScale } from 'react-native-size-matters';
-import { Colors } from '../../constants/colors';
-import { Theme } from '../../constants/theme';
-import { ICONS } from '../../constants/icons';
+import { Colors } from '../../../constants/colors';
+import { Theme } from '../../../constants/theme';
+import { ICONS } from '../../../constants/icons';
 
 interface ActionItem {
     id: string;

@@ -13,6 +13,15 @@ import persons from '../assets/icons/persons.png';
 import addFriend from '../assets/icons/addfriend.png';
 import messageBlack from '../assets/icons/messageblack.png';
 import menu from '../assets/icons/menu.png';
+import book from '../assets/icons/book.png';
+import handShake from '../assets/icons/handShake.png';
+import star from '../assets/icons/star.png';
+import setting from '../assets/icons/setting.png';
+import noti from '../assets/icons/noti.png';
+import logout from '../assets/icons/logout.png';
+import backicon from '../assets/icons/backicon.png';
+import search from '../assets/icons/search.png';
+import send from '../assets/icons/send.png';
 
 
 
@@ -32,7 +41,16 @@ export const ICONS = {
     persons,
     addFriend,
     messageBlack,
-    menu
+    menu,
+    book,
+    handShake,
+    star,
+    setting,
+    noti,
+    logout,
+    backicon,
+    search,
+    send
 };
 
 // Export individual icons for direct imports if needed
@@ -51,5 +69,14 @@ export {
     persons,
     addFriend,
     messageBlack,
-    menu
+    menu,
+    book,
+    handShake,
+    star,
+    setting,
+    noti,
+    logout,
+    backicon,
+    search,
+    send
 };

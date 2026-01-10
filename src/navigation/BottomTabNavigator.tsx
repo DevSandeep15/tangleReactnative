@@ -6,13 +6,14 @@ import type { RootTabParamList } from './types';
 import { Colors } from '../constants/colors';
 import { Theme } from '../constants/theme';
 
-import ServiceScreen from '../screens/Service/ServiceScreen';
-import HomeScreen from '../screens/Home/HomeScreen';
-import HubScreen from '../screens/Hub/HubScreen';
-import ProfileScreen from '../screens/Profile/ProfileScreen';
+import ServiceScreen from '../screens/dash/Service/ServiceScreen';
+import HomeScreen from '../screens/dash/Home/HomeScreen';
+import HubScreen from '../screens/dash/Hub/HubScreen';
+import ProfileScreen from '../screens/dash/Profile/ProfileScreen';
 import { ICONS } from '../constants/icons';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
-import CreatePost, { CreatePostBottomSheetRef } from '../screens/Add/createPost';
+import CreatePost, { CreatePostBottomSheetRef } from '../screens/dash/Add/createPost';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 
@@ -50,8 +51,9 @@ interface CustomTabBarProps extends BottomTabBarProps {
 }
 
 const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigation, onOpenCreatePost }) => {
+    const insets = useSafeAreaInsets();
     return (
-        <View style={styles.tabBarContainer}>
+        <View style={[styles.tabBarContainer, { marginBottom: insets.bottom }]}>
             {state.routes.map((route, index) => {
                 const { options } = descriptors[route.key];
                 const label =
@@ -155,6 +157,7 @@ const CustomTabBar: React.FC<CustomTabBarProps> = ({ state, descriptors, navigat
 
 const BottomTabNavigator: React.FC = () => {
     const createPostRef = React.useRef<CreatePostBottomSheetRef>(null);
+    const insets = useSafeAreaInsets();
 
     const handleOpenCreatePost = () => {
         createPostRef.current?.expand();

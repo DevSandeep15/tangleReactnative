@@ -44,5 +44,10 @@ export const Colors = {
 
   lightPink: '#FFBEB880',
   buttonColor: 'rgba(245, 245, 245, 001)',
-  skyBlue: 'rgba(184, 215, 255, 1)'
+  skyBlue: 'rgba(184, 215, 255, 1)',
+  darkgreen: '#BFD5CD',
+  pink: 'rgba(255, 190, 184, 1)',
+  blue: 'rgba(155, 198, 255, 1)',
+  lightGray: '#e1e1e1ff',
+
 };

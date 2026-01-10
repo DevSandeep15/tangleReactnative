@@ -1,24 +1,22 @@
-import React, { useMemo, useCallback, useState, useRef } from 'react';
+import React, { useMemo, useCallback, useState, forwardRef, useImperativeHandle, memo } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     Image,
     TouchableOpacity,
-    FlatList,
     Keyboard,
-    Platform,
-    KeyboardAvoidingView,
 } from 'react-native';
 import BottomSheet, {
     BottomSheetBackdrop,
-    BottomSheetView,
     BottomSheetTextInput,
+    BottomSheetFooter,
     BottomSheetFlatList,
 } from '@gorhom/bottom-sheet';
-import { Colors } from '../../constants/colors';
-import { Theme } from '../../constants/theme';
-import { moderateScale } from 'react-native-size-matters';
+import { Colors } from '../../../constants/colors';
+import { Theme } from '../../../constants/theme';
+import { moderateScale, verticalScale } from 'react-native-size-matters';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Comment {
     id: string;
@@ -28,19 +26,69 @@ interface Comment {
     time: string;
 }
 
-interface CommentBottomSheetProps {
-    bottomSheetRef: React.RefObject<BottomSheet>;
+interface Props {
     onClose: () => void;
 }
 
-const CommentBottomSheet: React.FC<CommentBottomSheetProps> = ({
-    bottomSheetRef,
-    onClose,
-}) => {
-    // Instagram behavior: starts at 50%, expands to 90% when keyboard opens
-    const snapPoints = useMemo(() => ['50%', '90%'], []);
+export type CommentBottomSheetRef = {
+    open: () => void;
+    close: () => void;
+};
 
-    const [commentText, setCommentText] = useState('');
+// Memoized footer component to prevent remounting on every character
+const CommentFooter = memo(({ onPost, ...props }: any) => {
+    const insets = useSafeAreaInsets();
+    const [text, setText] = useState('');
+
+    const handlePost = () => {
+        if (text.trim()) {
+            onPost(text.trim());
+            setText('');
+            Keyboard.dismiss();
+        }
+    };
+
+    return (
+        <BottomSheetFooter {...props} bottomInset={insets.bottom}>
+            <View style={styles.footerContainer}>
+                <Image
+                    source={{ uri: 'https://i.pravatar.cc/150?u=me' }}
+                    style={styles.inputAvatar}
+                />
+                <View style={styles.inputOuterContainer}>
+                    <BottomSheetTextInput
+                        style={styles.input as any}
+                        placeholder="Add a comment..."
+                        placeholderTextColor={Colors.textSecondary}
+                        value={text}
+                        onChangeText={setText}
+                        multiline
+                        maxLength={500}
+                    />
+                </View>
+                <TouchableOpacity
+                    style={styles.postButton}
+                    onPress={handlePost}
+                    disabled={!text.trim()}
+                >
+                    <Text
+                        style={[
+                            styles.postButtonText,
+                            !text.trim() && styles.postButtonDisabled,
+                        ]}
+                    >
+                        Post
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        </BottomSheetFooter>
+    );
+});
+
+const CommentBottomSheet = forwardRef<CommentBottomSheetRef, Props>(({ onClose }, ref) => {
+    const sheetRef = React.useRef<BottomSheet>(null);
+    const snapPoints = useMemo(() => ['50%', '95%'], []);
+
     const [comments, setComments] = useState<Comment[]>([
         {
             id: '1',
@@ -65,20 +113,21 @@ const CommentBottomSheet: React.FC<CommentBottomSheetProps> = ({
         },
     ]);
 
-    const handleAddComment = useCallback(() => {
-        if (commentText.trim()) {
-            const newComment: Comment = {
-                id: Date.now().toString(),
-                author: 'You',
-                text: commentText.trim(),
-                avatar: 'https://i.pravatar.cc/150?u=me',
-                time: 'Just now',
-            };
-            setComments((prev) => [newComment, ...prev]);
-            setCommentText('');
-            Keyboard.dismiss();
-        }
-    }, [commentText]);
+    useImperativeHandle(ref, () => ({
+        open: () => sheetRef.current?.snapToIndex(0),
+        close: () => sheetRef.current?.close(),
+    }));
+
+    const handleAddComment = useCallback((text: string) => {
+        const newComment: Comment = {
+            id: Date.now().toString(),
+            author: 'You',
+            text: text,
+            avatar: 'https://i.pravatar.cc/150?u=me',
+            time: 'Just now',
+        };
+        setComments((prev) => [newComment, ...prev]);
+    }, []);
 
     const renderBackdrop = useCallback(
         (props: any) => (
@@ -93,7 +142,7 @@ const CommentBottomSheet: React.FC<CommentBottomSheetProps> = ({
         [onClose]
     );
 
-    const renderComment = ({ item }: { item: Comment }) => (
+    const renderComment = useCallback(({ item }: { item: Comment }) => (
         <View style={styles.commentItem}>
             <Image source={{ uri: item.avatar }} style={styles.commentAvatar} />
             <View style={styles.commentContent}>
@@ -104,27 +153,33 @@ const CommentBottomSheet: React.FC<CommentBottomSheetProps> = ({
                 <Text style={styles.commentText}>{item.text}</Text>
             </View>
         </View>
+    ), []);
+
+    // Stabilized footer callback
+    const renderFooter = useCallback(
+        (props: any) => (
+            <CommentFooter onPost={handleAddComment} {...props} />
+        ),
+        [handleAddComment]
     );
 
     return (
         <BottomSheet
-            ref={bottomSheetRef}
+            ref={sheetRef}
             index={-1}
             snapPoints={snapPoints}
             enablePanDownToClose
             backdropComponent={renderBackdrop}
             onClose={onClose}
-            keyboardBehavior="interactive"
+            keyboardBehavior="extend"
             keyboardBlurBehavior="restore"
-            android_keyboardInputMode="adjustResize"
+            footerComponent={renderFooter}
         >
-            <BottomSheetView style={styles.container}>
-                {/* Header */}
+            <View style={styles.container}>
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Comments</Text>
                 </View>
 
-                {/* Comments List - Use BottomSheetFlatList for better keyboard handling */}
                 <BottomSheetFlatList
                     data={comments}
                     keyExtractor={(item) => item.id}
@@ -133,50 +188,10 @@ const CommentBottomSheet: React.FC<CommentBottomSheetProps> = ({
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 />
-
-                {/* Input Footer - Fixed at bottom, follows keyboard */}
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    keyboardVerticalOffset={0}
-                >
-                    <View style={styles.footerContainer}>
-                        <Image
-                            source={{ uri: 'https://i.pravatar.cc/150?u=me' }}
-                            style={styles.inputAvatar}
-                        />
-                        <View style={styles.inputOuterContainer}>
-                            <BottomSheetTextInput
-                                style={styles.input}
-                                placeholder="Add a comment..."
-                                placeholderTextColor={Colors.textSecondary}
-                                value={commentText}
-                                onChangeText={setCommentText}
-                                multiline
-                                maxLength={500}
-                                returnKeyType="default"
-                                blurOnSubmit={false}
-                            />
-                        </View>
-                        <TouchableOpacity
-                            style={styles.postButton}
-                            onPress={handleAddComment}
-                            disabled={!commentText.trim()}
-                        >
-                            <Text
-                                style={[
-                                    styles.postButtonText,
-                                    !commentText.trim() && styles.postButtonDisabled,
-                                ]}
-                            >
-                                Post
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </KeyboardAvoidingView>
-            </BottomSheetView>
+            </View>
         </BottomSheet>
     );
-};
+});
 
 const styles = StyleSheet.create({
     container: {
@@ -196,7 +211,7 @@ const styles = StyleSheet.create({
     },
     listContent: {
         padding: Theme.spacing.md,
-        paddingBottom: Theme.spacing.xl,
+        paddingBottom: verticalScale(120),
     },
     commentItem: {
         flexDirection: 'row',
@@ -235,8 +250,7 @@ const styles = StyleSheet.create({
     },
     footerContainer: {
         paddingHorizontal: Theme.spacing.md,
-        paddingTop: Theme.spacing.sm,
-        paddingBottom: Platform.OS === 'ios' ? moderateScale(25) : moderateScale(10),
+        paddingVertical: Theme.spacing.sm,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: Colors.white,
@@ -268,6 +282,7 @@ const styles = StyleSheet.create({
         color: Colors.text,
         paddingVertical: moderateScale(8),
         paddingHorizontal: 0,
+        textAlignVertical: 'center',
     },
     postButton: {
         paddingLeft: Theme.spacing.sm,
@@ -275,7 +290,7 @@ const styles = StyleSheet.create({
     postButtonText: {
         fontSize: Theme.fontSize.sm,
         fontFamily: Theme.fontFamily.bold,
-        color: Colors.primary,
+        color: Colors.primary || '#000',
     },
     postButtonDisabled: {
         opacity: 0.4,

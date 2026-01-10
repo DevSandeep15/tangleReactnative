@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import { Colors } from '../../constants/colors';
-import { Theme } from '../../constants/theme';
+import { Colors } from '../../../constants/colors';
+import { Theme } from '../../../constants/theme';
 import { moderateScale } from 'react-native-size-matters';
-import { ICONS } from '../../constants/icons';
+import { ICONS } from '../../../constants/icons';
 interface PostCardProps {
     authorName: string;
     authorAvatar: string;

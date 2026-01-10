@@ -1,14 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, FlatList, SafeAreaView, StatusBar } from 'react-native';
-import { Colors } from '../../constants/colors';
-import { Theme } from '../../constants/theme';
-import type { HomeScreenProps } from '../../navigation/types';
-import DashHeader from '../../components/common/DashHeader';
+import { View, Text, StyleSheet, ScrollView, FlatList, SafeAreaView, StatusBar, DeviceEventEmitter } from 'react-native';
+import { Colors } from '../../../constants/colors';
+import { Theme } from '../../../constants/theme';
+import type { HomeScreenProps } from '../../../navigation/types';
+import DashHeader from '../../../components/dashHeader/DashHeader';
 import RecommendedCard from './RecommendedCard';
 import CategoryFilters from './CategoryFilters';
 import PostCard from './PostCard';
 import { moderateScale } from 'react-native-size-matters';
-import { IMAGES } from '../../constants/images';
+import { IMAGES } from '../../../constants/images';
 
 const RECOMMENDED_DATA = [
     { id: '1', name: 'Suresh', role: 'Science Teacher', image: IMAGES.dummyAvatar },
@@ -46,12 +46,8 @@ const POSTS_DATA = [
     }
 ];
 
-import CommentBottomSheet from './CommentBottomSheet';
-import BottomSheet from '@gorhom/bottom-sheet';
-
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const [selectedCategory, setSelectedCategory] = React.useState('All');
-    const bottomSheetRef = React.useRef<BottomSheet>(null);
 
     const filteredPosts = React.useMemo(() => {
         if (selectedCategory === 'All') return POSTS_DATA;
@@ -59,7 +55,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }, [selectedCategory]);
 
     const handleCommentPress = () => {
-        bottomSheetRef.current?.expand();
+        DeviceEventEmitter.emit('OPEN_COMMENTS');
     };
 
     return (
@@ -67,7 +63,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
             <DashHeader
                 userName="Ajay Talwar"
-                userAvatar={IMAGES.dummyImage} />
+                userAvatar={IMAGES.dummyImage}
+                onNotificationPress={() => navigation.navigate('Notifications')}
+                onChatPress={() => navigation.navigate('Inbox')}
+            />
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Recommended Section */}
@@ -116,11 +115,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
                 <View style={{ height: moderateScale(20) }} />
             </ScrollView>
-
-            <CommentBottomSheet
-                bottomSheetRef={bottomSheetRef}
-                onClose={() => bottomSheetRef.current?.close()}
-            />
         </SafeAreaView>
     );
 };

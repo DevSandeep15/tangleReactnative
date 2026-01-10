@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import { verticalScale, scale } from 'react-native-size-matters';
-import { Colors } from '../../constants/colors';
-import { Theme } from '../../constants/theme';
-import ImagePickerService from '../../services/ImagePickerService';
+import { Colors } from '../../../constants/colors';
+import { Theme } from '../../../constants/theme';
+import ImagePickerService from '../../../services/ImagePickerService';
 
 interface Props {
     imageUri: string | null;

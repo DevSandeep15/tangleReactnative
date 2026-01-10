@@ -1,7 +1,7 @@
 import React from 'react';
 import { ScrollView, Text, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/colors';
-import { Theme } from '../../constants/theme';
+import { Colors } from '../../../constants/colors';
+import { Theme } from '../../../constants/theme';
 import { moderateScale } from 'react-native-size-matters';
 
 interface CategoryFiltersProps {

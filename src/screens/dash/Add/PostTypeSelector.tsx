@@ -1,7 +1,7 @@
 import React from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Colors } from '../../constants/colors';
-import { Theme } from '../../constants/theme';
+import { Colors } from '../../../constants/colors';
+import { Theme } from '../../../constants/theme';
 import { verticalScale } from 'react-native-size-matters';
 
 export type PostType = 'Discussion' | 'Event' | 'Vote' | 'Introduction' | 'Announcement';

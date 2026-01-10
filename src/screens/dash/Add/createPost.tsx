@@ -8,6 +8,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     Image,
+    Keyboard,
     Alert,
 } from 'react-native';
 import BottomSheet, {
@@ -15,16 +16,17 @@ import BottomSheet, {
     BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
-import { Colors } from '../../constants/colors';
-import { Theme } from '../../constants/theme';
-import { IMAGES } from '../../constants/images';
-import ImagePickerService from '../../services/ImagePickerService';
+import { Colors } from '../../../constants/colors';
+import { Theme } from '../../../constants/theme';
+import { IMAGES } from '../../../constants/images';
+import ImagePickerService from '../../../services/ImagePickerService';
 import DatePicker from 'react-native-date-picker';
 
 // Custom Components
 import PostTypeSelector, { PostType } from './PostTypeSelector';
 import ActionButtonsGrid from './ActionButtonsGrid';
 import ImagePreview from './ImagePreview';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type CreatePostBottomSheetRef = {
     expand: () => void;
@@ -37,6 +39,7 @@ type Props = {
 
 const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
     ({ onPostSubmit }, ref) => {
+        const insets = useSafeAreaInsets();
         const [postText, setPostText] = useState('');
         const [selectedType, setSelectedType] = useState<PostType>('Discussion');
         const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -54,6 +57,7 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
 
         const handleClose = () => {
             sheetRef.current?.close();
+            Keyboard.dismiss();
         };
 
         const handlePost = () => {
@@ -66,6 +70,7 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                 });
                 resetForm();
                 sheetRef.current?.close();
+                Keyboard.dismiss();
             }
         };
 
@@ -126,7 +131,9 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                     backgroundStyle={styles.background}
                     keyboardBehavior="interactive"
                     keyboardBlurBehavior="restore"
+                    bottomInset={insets.bottom}
                 >
+
                     <View style={styles.container}>
                         {/* Header */}
                         <View style={styles.header}>
@@ -195,7 +202,7 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                             )}
                         </BottomSheetScrollView>
 
-                        <View style={styles.footer}>
+                        <View style={[styles.footer, { paddingBottom: insets.bottom + scale(50) }]}>
                             <TouchableOpacity
                                 style={styles.cancelButton}
                                 onPress={handleClose}
@@ -345,7 +352,7 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         paddingHorizontal: Theme.spacing.lg,
-        paddingVertical: Theme.spacing.md,
+        paddingVertical: Theme.spacing.xs,
         borderTopWidth: 1,
         borderTopColor: '#F2F2F2',
         backgroundColor: Colors.white,
