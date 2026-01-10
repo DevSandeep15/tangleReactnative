@@ -9,58 +9,88 @@ import NotificationScreen from '../screens/dash/Notification/NotificationScreen'
 import InboxScreen from '../screens/dash/Inbox/InboxScreen';
 import ChatScreen from '../screens/dash/Inbox/ChatScreen';
 
+import WelcomeScreen from '../screens/auth/welCome';
+import LoginScreen from '../screens/auth/Login';
+import SignupScreen from '../screens/auth/Signup';
+import VerificationScreen from '../screens/auth/Verification';
+import type { AuthStackParamList } from './types';
+import Toast from 'react-native-toast-message';
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
+
+const AuthNavigator = () => {
+    return (
+        <AuthStack.Navigator
+            screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: Colors.background },
+            }}>
+            <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
+            <AuthStack.Screen name="Login" component={LoginScreen} />
+            <AuthStack.Screen name="Signup" component={SignupScreen} />
+            <AuthStack.Screen name="Verification" component={VerificationScreen} />
+        </AuthStack.Navigator>
+    );
+};
+
+const MainNavigator = () => {
+    return (
+        <Stack.Navigator
+            screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: Colors.background },
+            }}>
+            <Stack.Screen name="MainTabs" component={BottomTabNavigator} />
+            <Stack.Screen
+                name="Notifications"
+                component={NotificationScreen}
+                options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+                name="Inbox"
+                component={InboxScreen}
+                options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+                name="ChatDetail"
+                component={ChatScreen}
+                options={{ animation: 'slide_from_right' }}
+            />
+        </Stack.Navigator>
+    );
+};
 
 const AppNavigator: React.FC = () => {
     const commentSheetRef = React.useRef<CommentBottomSheetRef>(null);
+    const [isAuthenticated, setIsAuthenticated] = React.useState(false); // Simulate auth state
 
     React.useEffect(() => {
-        const subscription = DeviceEventEmitter.addListener('OPEN_COMMENTS', () => {
+        const commentSubscription = DeviceEventEmitter.addListener('OPEN_COMMENTS', () => {
             if (commentSheetRef.current) {
                 commentSheetRef.current.open();
             }
         });
-        return () => subscription.remove();
+
+        const authSubscription = DeviceEventEmitter.addListener('LOGIN', () => {
+            setIsAuthenticated(true);
+        });
+
+        return () => {
+            commentSubscription.remove();
+            authSubscription.remove();
+        };
     }, []);
 
     return (
         <View style={{ flex: 1 }}>
-            <Stack.Navigator
-                screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: Colors.background },
-                }}>
-                <Stack.Screen
-                    name="MainTabs"
-                    component={BottomTabNavigator}
-                />
-                <Stack.Screen
-                    name="Notifications"
-                    component={NotificationScreen}
-                    options={{
-                        animation: 'slide_from_right'
-                    }}
-                />
-                <Stack.Screen
-                    name="Inbox"
-                    component={InboxScreen}
-                    options={{
-                        animation: 'slide_from_right'
-                    }}
-                />
-                <Stack.Screen
-                    name="ChatDetail"
-                    component={ChatScreen}
-                    options={{
-                        animation: 'slide_from_right'
-                    }}
-                />
-            </Stack.Navigator>
+            {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
 
             <CommentBottomSheet
                 ref={commentSheetRef}
                 onClose={() => commentSheetRef.current?.close()}
             />
+            <Toast />
         </View>
     );
 };

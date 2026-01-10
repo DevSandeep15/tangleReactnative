@@ -22,6 +22,12 @@ import logout from '../assets/icons/logout.png';
 import backicon from '../assets/icons/backicon.png';
 import search from '../assets/icons/search.png';
 import send from '../assets/icons/send.png';
+import google from '../assets/icons/google.png';
+import apple from '../assets/icons/apple.png';
+import mail from '../assets/icons/mail.png';
+import thumb from '../assets/icons/thumb.png';
+
+
 
 
 
@@ -50,7 +56,11 @@ export const ICONS = {
     logout,
     backicon,
     search,
-    send
+    send,
+    google,
+    apple,
+    mail,
+    thumb
 };
 
 // Export individual icons for direct imports if needed
@@ -78,5 +88,9 @@ export {
     logout,
     backicon,
     search,
-    send
+    send,
+    google,
+    apple,
+    mail,
+    thumb
 };

@@ -11,14 +11,24 @@ export type RootTabParamList = {
     Profile: undefined;
 };
 
+// Define the param list for auth stack
+export type AuthStackParamList = {
+    Welcome: undefined;
+    Login: undefined;
+    Signup: undefined;
+    Verification: { email: string };
+};
+
 // Define the param list for stack navigation
 export type RootStackParamList = {
+    Auth: NavigatorScreenParams<AuthStackParamList>;
     MainTabs: NavigatorScreenParams<RootTabParamList>;
     Notifications: undefined;
     Inbox: undefined;
     ChatDetail: { name: string; avatar: any };
-    // Add other screens here, e.g.:
 };
+
+export type WelcomeScreenProps = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;
 
 export type InboxScreenProps = NativeStackScreenProps<RootStackParamList, 'Inbox'>;
 export type ChatDetailScreenProps = NativeStackScreenProps<RootStackParamList, 'ChatDetail'>;
