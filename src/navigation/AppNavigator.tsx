@@ -13,6 +13,10 @@ import WelcomeScreen from '../screens/auth/welCome';
 import LoginScreen from '../screens/auth/Login';
 import SignupScreen from '../screens/auth/Signup';
 import VerificationScreen from '../screens/auth/Verification';
+import SplashScreen from '../screens/Splash/SplashScreen';
+import SetupProfileScreen from '../screens/auth/SetupProfile';
+import LocationScreen from '../screens/auth/Location';
+import InterestsScreen from '../screens/auth/Interests';
 import type { AuthStackParamList } from './types';
 import Toast from 'react-native-toast-message';
 
@@ -26,10 +30,14 @@ const AuthNavigator = () => {
                 headerShown: false,
                 contentStyle: { backgroundColor: Colors.background },
             }}>
+            <AuthStack.Screen name="Splash" component={SplashScreen} />
             <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
             <AuthStack.Screen name="Login" component={LoginScreen} />
             <AuthStack.Screen name="Signup" component={SignupScreen} />
             <AuthStack.Screen name="Verification" component={VerificationScreen} />
+            <AuthStack.Screen name="SetupProfile" component={SetupProfileScreen} />
+            <AuthStack.Screen name="Location" component={LocationScreen} />
+            <AuthStack.Screen name="Interests" component={InterestsScreen} />
         </AuthStack.Navigator>
     );
 };

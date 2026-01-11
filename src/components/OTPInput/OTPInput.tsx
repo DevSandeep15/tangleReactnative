@@ -28,8 +28,15 @@ export const OTPInput: React.FC<OTPInputProps> = ({
     }, [code]);
 
     const handleOnPress = () => {
-        setIsFocused(true);
-        inputRef.current?.focus();
+        if (isFocused) {
+            inputRef.current?.blur();
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
+        } else {
+            setIsFocused(true);
+            inputRef.current?.focus();
+        }
     };
 
     const handleOnBlur = () => {
@@ -70,13 +77,13 @@ export const OTPInput: React.FC<OTPInputProps> = ({
                 value={code}
                 onChangeText={setCode}
                 maxLength={maximumLength}
-                keyboardType="number-pad" // or "numeric"
+                keyboardType="number-pad"
                 returnKeyType="done"
-                textContentType="oneTimeCode" // Important for iOS autofill
+                textContentType="oneTimeCode"
                 onBlur={handleOnBlur}
                 onFocus={() => setIsFocused(true)}
                 style={styles.hiddenInput}
-                autoFocus={true} // Optional: Auto focus when mounted
+                autoFocus={true}
             />
         </View>
     );

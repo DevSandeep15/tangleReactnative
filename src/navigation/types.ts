@@ -17,6 +17,10 @@ export type AuthStackParamList = {
     Login: undefined;
     Signup: undefined;
     Verification: { email: string };
+    Splash: undefined;
+    SetupProfile: undefined;
+    Location: undefined;
+    Interests: undefined;
 };
 
 // Define the param list for stack navigation

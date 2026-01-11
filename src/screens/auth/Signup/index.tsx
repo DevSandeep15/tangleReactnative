@@ -19,6 +19,7 @@ import { moderateScale, verticalScale } from 'react-native-size-matters';
 import Toast from 'react-native-toast-message';
 import { AuthHeader } from '../../../components/authHeader/AuthHeader';
 import { TextField } from '../../../components/TextField/TextField';
+import { AuthButton } from '../../../components/Button/AuthButton';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
 
@@ -75,7 +76,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
             >
                 <AuthHeader
                     title="Can we get your email, please?"
-                    subtitle="We only use email to make sure everyone on tangle is real"
+                    subtitle="We use your email to keep your account secure and send important community updates."
                     onBackPress={() => navigation.goBack()}
                 />
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -83,7 +84,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
                         {/* Input Section */}
                         <View style={styles.inputContainer}>
                             <TextField
-                                label="Your Email"
+                                label="Email Id"
                                 placeholder="Enter your email"
                                 value={email}
                                 onChangeText={setEmail}
@@ -95,13 +96,7 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
 
                         {/* Next Button */}
                         <View style={styles.footer}>
-                            <TouchableOpacity
-                                style={[styles.button]}
-                                activeOpacity={0.8}
-                                onPress={handleNext}
-                            >
-                                <Text style={[styles.buttonText, { color: email ? Colors.white : Colors.text }]}>Next</Text>
-                            </TouchableOpacity>
+                            <AuthButton title="Next" onPress={handleNext} />
                         </View>
                     </View>
                 </TouchableWithoutFeedback>

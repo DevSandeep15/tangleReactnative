@@ -4,18 +4,22 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
-import { moderateScale, verticalScale } from 'react-native-size-matters';
+import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 import Toast from 'react-native-toast-message';
 import { AuthHeader } from '../../../components/authHeader/AuthHeader';
 import { OTPInput } from '../../../components/OTPInput/OTPInput';
+import { AuthButton } from '../../../components/Button/AuthButton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Verification'>;
 
-const VerificationScreen: React.FC<Props> = ({ navigation }) => {
+const VerificationScreen: React.FC<Props> = ({ navigation, route }) => {
+
+    const insets = useSafeAreaInsets();
     const [otpCode, setOtpCode] = useState('');
     const [isPinReady, setIsPinReady] = useState(false);
 
-    const phoneNumber = "+91 8383091028";
+    const { email } = route?.params;
 
     const handleNext = () => {
         Keyboard.dismiss();
@@ -23,7 +27,7 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
             Toast.show({
                 type: 'error',
                 text1: 'Incomplete Code',
-                text2: 'Please enter the 6-digit verification code.',
+                text2: 'Please fill the code sent on your email',
                 position: 'top',
                 visibilityTime: 3000,
             });
@@ -39,12 +43,11 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
             position: 'top',
             visibilityTime: 3000,
         });
-        // navigation.navigate('NextScreen'); 
+        navigation.replace('SetupProfile');
+        Keyboard.dismiss();
     };
 
-    const handleChangeNumber = () => {
-        // navigation.goBack(); // Or navigate to number input screen
-        console.log("Change number pressed");
+    const handleChangeEmail = () => {
         navigation.goBack();
     };
 
@@ -59,7 +62,8 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
                     title="Verify your number"
                     subtitle={
                         <Text>
-                            Enter the code we've sent on your mail{' '}
+                            Enter the code we've sent by text to {email}{' '}
+                            <Text style={{ fontFamily: Theme.fontFamily.bold, color: Colors.text }} onPress={handleChangeEmail}>Change number</Text>
                         </Text>
                     }
                     onBackPress={() => navigation.goBack()}
@@ -78,18 +82,17 @@ const VerificationScreen: React.FC<Props> = ({ navigation }) => {
                         </View>
 
                         <View style={styles.footer}>
-                            <TouchableOpacity
-                                style={[styles.button,]}
-                                activeOpacity={0.8}
+                            <AuthButton
+                                title="Next"
                                 onPress={handleNext}
-                                disabled={!isPinReady}
-                            >
-                                <Text style={[styles.buttonText, { color: isPinReady ? Colors.white : Colors.text }]}>Next</Text>
-                            </TouchableOpacity>
+                            />
                         </View>
                     </View>
                 </TouchableWithoutFeedback>
+
             </KeyboardAvoidingView>
+            <Text style={[styles.bottom, { marginBottom: insets.bottom }]}>Didn’t get a code?{'\n'}
+                Check spam or promotions if you don’t see it.</Text>
         </SafeAreaView>
     );
 };
@@ -135,6 +138,12 @@ const styles = StyleSheet.create({
         fontSize: moderateScale(16),
         fontFamily: Theme.fontFamily.bold,
     },
+    bottom: {
+        fontSize: moderateScale(12),
+        fontFamily: Theme.fontFamily.regular,
+        color: Colors.text,
+        marginHorizontal: scale(20)
+    }
 });
 
 export default VerificationScreen;
