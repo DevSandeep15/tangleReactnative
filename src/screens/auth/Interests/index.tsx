@@ -61,6 +61,7 @@ const InterestsScreen: React.FC<Props> = ({ navigation }) => {
             text1: 'All set!',
             text2: 'Welcome to Tangle!',
         });
+        navigation.navigate('CreateAvatar');
     };
 
     const renderItem = ({ item }: { item: InterestItem }) => {

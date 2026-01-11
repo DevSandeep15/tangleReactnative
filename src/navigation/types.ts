@@ -17,10 +17,13 @@ export type AuthStackParamList = {
     Login: undefined;
     Signup: undefined;
     Verification: { email: string };
-    Splash: undefined;
     SetupProfile: undefined;
     Location: undefined;
     Interests: undefined;
+    CreateAvatar: undefined;
+    NotificationPreference: undefined;
+    FinishAuth: undefined;
+    FindBuddy: undefined;
 };
 
 // Define the param list for stack navigation

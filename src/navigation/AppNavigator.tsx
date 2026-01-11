@@ -13,12 +13,16 @@ import WelcomeScreen from '../screens/auth/welCome';
 import LoginScreen from '../screens/auth/Login';
 import SignupScreen from '../screens/auth/Signup';
 import VerificationScreen from '../screens/auth/Verification';
-import SplashScreen from '../screens/Splash/SplashScreen';
 import SetupProfileScreen from '../screens/auth/SetupProfile';
 import LocationScreen from '../screens/auth/Location';
 import InterestsScreen from '../screens/auth/Interests';
+import CreateAvatarScreen from '../screens/auth/CreateAvatar';
+import NotificationPreferenceScreen from '../screens/auth/NotificationPreference';
+import FinishAuthScreen from '../screens/auth/finishAuth';
+import FindBuddyScreen from '../screens/auth/FindBuddy';
 import type { AuthStackParamList } from './types';
 import Toast from 'react-native-toast-message';
+import RNBootSplash from 'react-native-bootsplash';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -30,7 +34,6 @@ const AuthNavigator = () => {
                 headerShown: false,
                 contentStyle: { backgroundColor: Colors.background },
             }}>
-            <AuthStack.Screen name="Splash" component={SplashScreen} />
             <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
             <AuthStack.Screen name="Login" component={LoginScreen} />
             <AuthStack.Screen name="Signup" component={SignupScreen} />
@@ -38,6 +41,10 @@ const AuthNavigator = () => {
             <AuthStack.Screen name="SetupProfile" component={SetupProfileScreen} />
             <AuthStack.Screen name="Location" component={LocationScreen} />
             <AuthStack.Screen name="Interests" component={InterestsScreen} />
+            <AuthStack.Screen name="CreateAvatar" component={CreateAvatarScreen} />
+            <AuthStack.Screen name="NotificationPreference" component={NotificationPreferenceScreen} />
+            <AuthStack.Screen name="FinishAuth" component={FinishAuthScreen} />
+            <AuthStack.Screen name="FindBuddy" component={FindBuddyScreen} />
         </AuthStack.Navigator>
     );
 };
@@ -74,6 +81,8 @@ const AppNavigator: React.FC = () => {
     const [isAuthenticated, setIsAuthenticated] = React.useState(false); // Simulate auth state
 
     React.useEffect(() => {
+        RNBootSplash.hide({ fade: true });
+
         const commentSubscription = DeviceEventEmitter.addListener('OPEN_COMMENTS', () => {
             if (commentSheetRef.current) {
                 commentSheetRef.current.open();

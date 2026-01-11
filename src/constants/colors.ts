@@ -49,5 +49,6 @@ export const Colors = {
   pink: 'rgba(255, 190, 184, 1)',
   blue: 'rgba(155, 198, 255, 1)',
   lightGray: '#e1e1e1ff',
+  yellow: '#FFF7B8'
 
 };

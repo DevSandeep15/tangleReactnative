@@ -7,13 +7,17 @@
         <item name="android:windowBackground">@drawable/splash_background</item>
         <item name="android:statusBarColor">@color/splash_white</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:navigationBarColor">@color/splash_white</item>
-        <item name="android:windowLightNavigationBar">true</item>
         
-        <!-- Android 12 Splash Screen API -->
+        <!-- Android 12+ Splash Screen API -->
         <item name="android:windowSplashScreenBackground">@color/splash_white</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_image</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/bootsplash_logo</item>
         <item name="android:windowSplashScreenAnimationDuration">0</item>
+    </style>
+
+    <style name="BootTheme" parent="Theme.BootSplash">
+        <item name="bootSplashBackground">@color/splash_white</item>
+        <item name="bootSplashLogo">@drawable/bootsplash_logo</item>
+        <item name="postBootSplashTheme">@style/AppTheme</item>
     </style>
 
 </resources>
