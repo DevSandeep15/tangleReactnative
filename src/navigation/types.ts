@@ -15,15 +15,80 @@ export type RootTabParamList = {
 export type AuthStackParamList = {
     Welcome: undefined;
     Login: undefined;
+    EmailLogin: undefined;
+    ForgotPassword: undefined;
+    ResetPassword: { email: string };
     Signup: undefined;
     Verification: { email: string };
-    SetupProfile: undefined;
-    Location: undefined;
-    Interests: undefined;
-    CreateAvatar: undefined;
-    NotificationPreference: undefined;
-    FinishAuth: undefined;
-    FindBuddy: undefined;
+    SetupProfile: { email: string };
+    Location: {
+        email: string;
+        name: string;
+        age: number;
+        gender: string;
+        password?: string;
+    };
+    Interests: {
+        email: string;
+        name: string;
+        age: number;
+        gender: string;
+        password?: string;
+        society_name: string;
+        flat_number: string;
+    };
+    CreateAvatar: {
+        email: string;
+        name: string;
+        age: number;
+        gender: string;
+        password?: string;
+        society_name: string;
+        flat_number: string;
+        preferred_interest: string[];
+    };
+    NotificationPreference: {
+        email: string;
+        name: string;
+        age: number;
+        gender: string;
+        password?: string;
+        society_name: string;
+        flat_number: string;
+        preferred_interest: string[];
+        emoji_name: string;
+        emoji: string;
+    };
+    FinishAuth: {
+        email: string;
+        name: string;
+        age: number;
+        gender: string;
+        password?: string;
+        society_name: string;
+        flat_number: string;
+        preferred_interest: string[];
+        emoji_name: string;
+        emoji: string;
+        activity_alerts: boolean;
+        event_reminders: boolean;
+        chat_notifications: boolean;
+    };
+    FindBuddy: {
+        email: string;
+        name: string;
+        age: number;
+        gender: string;
+        password?: string;
+        society_name: string;
+        flat_number: string;
+        preferred_interest: string[];
+        emoji_name: string;
+        emoji: string;
+        activity_alerts: boolean;
+        event_reminders: boolean;
+        chat_notifications: boolean;
+    };
 };
 
 // Define the param list for stack navigation

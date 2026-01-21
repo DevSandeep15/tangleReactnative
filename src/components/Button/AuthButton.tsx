@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 import { moderateScale } from 'react-native-size-matters';
@@ -8,27 +8,37 @@ interface AuthButtonProps {
     title: string;
     onPress: () => void;
     disabled?: boolean;
+    loading?: boolean;
     style?: ViewStyle;
     textStyle?: TextStyle;
+    children?: React.ReactNode;
 }
 
 export const AuthButton: React.FC<AuthButtonProps> = ({
     title,
     onPress,
     disabled = false,
+    loading = false,
     style,
     textStyle,
+    children,
 }) => {
     return (
         <TouchableOpacity
-            style={[styles.button, disabled && styles.disabledButton, style]}
+            style={[styles.button, (disabled || loading) && styles.disabledButton, style]}
             activeOpacity={0.8}
             onPress={onPress}
-            disabled={disabled}
+            disabled={disabled || loading}
         >
-            <Text style={[styles.buttonText, disabled && styles.disabledButtonText, textStyle]}>
-                {title}
-            </Text>
+            {loading ? (
+                <ActivityIndicator color={textStyle?.color || Colors.text} />
+            ) : children ? (
+                children
+            ) : (
+                <Text style={[styles.buttonText, (disabled || loading) && styles.disabledButtonText, textStyle]}>
+                    {title}
+                </Text>
+            )}
         </TouchableOpacity>
     );
 };

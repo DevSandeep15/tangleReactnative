@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import BottomTabNavigator from './BottomTabNavigator';
 import type { RootStackParamList } from './types';
+import { useAppSelector } from '../store/hooks';
 import { Colors } from '../constants/colors';
 import CommentBottomSheet, { CommentBottomSheetRef } from '../screens/dash/Home/CommentBottomSheet';
 import { DeviceEventEmitter, View } from 'react-native';
@@ -11,6 +12,9 @@ import ChatScreen from '../screens/dash/Inbox/ChatScreen';
 
 import WelcomeScreen from '../screens/auth/welCome';
 import LoginScreen from '../screens/auth/Login';
+import EmailLoginScreen from '../screens/auth/Login/EmailLogin';
+import ForgotPasswordScreen from '../screens/auth/Login/ForgotPassword';
+import ResetPasswordScreen from '../screens/auth/Login/ResetPassword';
 import SignupScreen from '../screens/auth/Signup';
 import VerificationScreen from '../screens/auth/Verification';
 import SetupProfileScreen from '../screens/auth/SetupProfile';
@@ -36,6 +40,9 @@ const AuthNavigator = () => {
             }}>
             <AuthStack.Screen name="Welcome" component={WelcomeScreen} />
             <AuthStack.Screen name="Login" component={LoginScreen} />
+            <AuthStack.Screen name="EmailLogin" component={EmailLoginScreen} />
+            <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
             <AuthStack.Screen name="Signup" component={SignupScreen} />
             <AuthStack.Screen name="Verification" component={VerificationScreen} />
             <AuthStack.Screen name="SetupProfile" component={SetupProfileScreen} />
@@ -76,9 +83,11 @@ const MainNavigator = () => {
     );
 };
 
+
 const AppNavigator: React.FC = () => {
     const commentSheetRef = React.useRef<CommentBottomSheetRef>(null);
-    const [isAuthenticated, setIsAuthenticated] = React.useState(false); // Simulate auth state
+    const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
+    console.log('--- AppNavigator Auth Status ---', isAuthenticated);
 
     React.useEffect(() => {
         RNBootSplash.hide({ fade: true });
@@ -89,13 +98,8 @@ const AppNavigator: React.FC = () => {
             }
         });
 
-        const authSubscription = DeviceEventEmitter.addListener('LOGIN', () => {
-            setIsAuthenticated(true);
-        });
-
         return () => {
             commentSubscription.remove();
-            authSubscription.remove();
         };
     }, []);
 

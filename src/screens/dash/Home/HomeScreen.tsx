@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, FlatList, SafeAreaView, StatusBar, DeviceEventEmitter } from 'react-native';
+import { useAppSelector } from '../../../store/hooks';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import type { HomeScreenProps } from '../../../navigation/types';
@@ -48,6 +49,7 @@ const POSTS_DATA = [
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const [selectedCategory, setSelectedCategory] = React.useState('All');
+    const { user } = useAppSelector(state => state.auth);
 
     const filteredPosts = React.useMemo(() => {
         if (selectedCategory === 'All') return POSTS_DATA;
@@ -62,8 +64,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
             <DashHeader
-                userName="Ajay Talwar"
-                userAvatar={IMAGES.dummyImage}
+                userName={user?.name || "User"}
+                userAvatar={user?.emoji}
                 onNotificationPress={() => navigation.navigate('Notifications')}
                 onChatPress={() => navigation.navigate('Inbox')}
             />

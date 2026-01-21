@@ -8,7 +8,6 @@ import {
     Image,
     ScrollView,
     StatusBar,
-    Platform
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
@@ -46,19 +45,23 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
                             <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
                                 <Image source={ICONS.apple} style={styles.socialIcon} resizeMode='contain' />
                                 <Text style={styles.buttonText}>Apple</Text>
-                                <View />
+                                <View style={styles.placeholder} />
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
                                 <Image source={ICONS.google} style={styles.socialIcon} resizeMode='contain' />
                                 <Text style={styles.buttonText}>Google</Text>
-                                <View />
+                                <View style={styles.placeholder} />
                             </TouchableOpacity>
 
-                            <TouchableOpacity style={styles.socialButton} activeOpacity={0.7} onPress={() => { /* Navigate to Email Signup flow */ }}>
+                            <TouchableOpacity
+                                style={styles.socialButton}
+                                activeOpacity={0.7}
+                                onPress={() => navigation.navigate('EmailLogin')}
+                            >
                                 <Image source={ICONS.mail} style={styles.socialIcon} resizeMode='contain' />
                                 <Text style={styles.buttonText}>Use Email</Text>
-                                <View />
+                                <View style={styles.placeholder} />
                             </TouchableOpacity>
                         </View>
 
@@ -90,7 +93,7 @@ const styles = StyleSheet.create({
     },
     topSafeArea: {
         flex: 0,
-        backgroundColor: '#FFF7B8', // This handles the status bar area on iOS
+        backgroundColor: '#FFF7B8',
     },
     container: {
         flex: 1,
@@ -151,17 +154,21 @@ const styles = StyleSheet.create({
         fontSize: Theme.fontSize.sm,
         fontFamily: Theme.fontFamily.semiBold,
         color: Colors.text,
-        marginLeft: -scale(13)
     },
     socialIcon: {
         width: scale(20),
         height: scale(20),
         marginLeft: scale(13)
     },
+    placeholder: {
+        width: scale(20),
+        marginRight: scale(13)
+    },
     loginLinkContainer: {
         flexDirection: 'row',
         marginTop: verticalScale(30),
         alignItems: 'center',
+        marginBottom: verticalScale(100),
     },
     loginText: {
         fontSize: moderateScale(14),
@@ -175,7 +182,6 @@ const styles = StyleSheet.create({
         textDecorationLine: 'underline',
     },
     footerContainer: {
-        // marginTop: verticalScale(70),
         position: 'absolute',
         bottom: 0,
         alignItems: 'center',

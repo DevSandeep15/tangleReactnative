@@ -28,42 +28,50 @@ const getRandomColor = () => bgColors[Math.floor(Math.random() * bgColors.length
 
 // Mock Data - Avatars with assigned random colors
 const avatarsData = [
-    { id: '1', image: IMAGES.avatar1, backgroundColor: getRandomColor() },
-    { id: '2', image: IMAGES.avatar2, backgroundColor: getRandomColor() },
-    { id: '3', image: IMAGES.avatar3, backgroundColor: getRandomColor() },
-    { id: '4', image: IMAGES.avatar4, backgroundColor: getRandomColor() },
-    { id: '5', image: IMAGES.avatar5, backgroundColor: getRandomColor() },
-    { id: '6', image: IMAGES.avatar6, backgroundColor: getRandomColor() },
-    { id: '7', image: IMAGES.avatar7, backgroundColor: getRandomColor() },
-    { id: '8', image: IMAGES.avatar8, backgroundColor: getRandomColor() },
-    { id: '9', image: IMAGES.avatar9, backgroundColor: getRandomColor() },
-    { id: '10', image: IMAGES.avatar10, backgroundColor: getRandomColor() },
-    { id: '11', image: IMAGES.avatar11, backgroundColor: getRandomColor() },
-    { id: '12', image: IMAGES.avatar12, backgroundColor: getRandomColor() },
-    { id: '13', image: IMAGES.avatar13, backgroundColor: getRandomColor() },
-    { id: '14', image: IMAGES.avatar14, backgroundColor: getRandomColor() },
-    { id: '15', image: IMAGES.avatar15, backgroundColor: getRandomColor() },
-    { id: '16', image: IMAGES.avatar15, backgroundColor: getRandomColor() },
-
+    { id: '1', image: IMAGES.avatar1, backgroundColor: getRandomColor(), name: 'Happy', emoji: '😊' },
+    { id: '2', image: IMAGES.avatar2, backgroundColor: getRandomColor(), name: 'Cool', emoji: '😎' },
+    { id: '3', image: IMAGES.avatar3, backgroundColor: getRandomColor(), name: 'Wink', emoji: '😉' },
+    { id: '4', image: IMAGES.avatar4, backgroundColor: getRandomColor(), name: 'Love', emoji: '😍' },
+    { id: '5', image: IMAGES.avatar5, backgroundColor: getRandomColor(), name: 'Excited', emoji: '🤩' },
+    { id: '6', image: IMAGES.avatar6, backgroundColor: getRandomColor(), name: 'Laugh', emoji: '😂' },
+    { id: '7', image: IMAGES.avatar7, backgroundColor: getRandomColor(), name: 'Calm', emoji: '😌' },
+    { id: '8', image: IMAGES.avatar8, backgroundColor: getRandomColor(), name: 'Smart', emoji: '🤓' },
+    { id: '9', image: IMAGES.avatar9, backgroundColor: getRandomColor(), name: 'Playful', emoji: '😜' },
+    { id: '10', image: IMAGES.avatar10, backgroundColor: getRandomColor(), name: 'Friendly', emoji: '😇' },
+    { id: '11', image: IMAGES.avatar11, backgroundColor: getRandomColor(), name: 'Star', emoji: '🌟' },
+    { id: '12', image: IMAGES.avatar12, backgroundColor: getRandomColor(), name: 'Strong', emoji: '💪' },
 ];
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'CreateAvatar'>;
 
-const CreateAvatarScreen: React.FC<Props> = ({ navigation }) => {
+const CreateAvatarScreen: React.FC<Props> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
-    const [selectedAvatarId, setSelectedAvatarId] = useState('1');
-    const [avatarName, setAvatarName] = useState('');
+    const { email, name, age, gender, password, society_name, flat_number, preferred_interest } = route.params;
 
-    const selectedAvatar = avatarsData.find(a => a.id === selectedAvatarId);
-    const currentAvatarImage = selectedAvatar?.image || IMAGES.avatar1;
-    const currentAvatarBg = selectedAvatar?.backgroundColor || '#FFE5B4';
+    const [selectedAvatarId, setSelectedAvatarId] = useState('1');
+
+    const selectedAvatar = avatarsData.find(a => a.id === selectedAvatarId) || avatarsData[0];
+    const currentAvatarImage = selectedAvatar.image;
+    const currentAvatarBg = selectedAvatar.backgroundColor;
 
     const handleNext = () => {
-        console.log('Selected Avatar:', selectedAvatarId, 'Name:', avatarName);
-        navigation.navigate('NotificationPreference');
+        console.log('Selected Avatar:', selectedAvatar.name);
+
+        navigation.navigate('NotificationPreference', {
+            email,
+            name,
+            age,
+            gender,
+            password,
+            society_name,
+            flat_number,
+            preferred_interest,
+            emoji_name: selectedAvatar.name,
+            emoji: selectedAvatar.emoji,
+        });
     };
 
-    const renderItem = ({ item }: { item: { id: string, image: any, backgroundColor: string } }) => {
+    const renderItem = ({ item }: { item: typeof avatarsData[0] }) => {
         const isSelected = selectedAvatarId === item.id;
         return (
             <TouchableOpacity
@@ -103,17 +111,6 @@ const CreateAvatarScreen: React.FC<Props> = ({ navigation }) => {
                     </View>
                 </View>
 
-                {/* Name Input */}
-                {/* <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Give your avatar a name..."
-                        placeholderTextColor={Colors.textSecondary}
-                        value={avatarName}
-                        onChangeText={setAvatarName}
-                    />
-                </View> */}
-
                 {/* Avatar Grid */}
                 <View style={styles.gridContainer}>
                     <FlatList
@@ -128,9 +125,7 @@ const CreateAvatarScreen: React.FC<Props> = ({ navigation }) => {
             </View>
 
             <View style={[styles.footer, { marginBottom: Platform.OS === 'android' ? verticalScale(20) : 0 }]}>
-                {/* Visual shows a right arrow. Using a simple styled button for now. */}
                 <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-                    {/* Placeholder for Arrow Icon */}
                     <Text style={styles.nextButtonText}>➔</Text>
                 </TouchableOpacity>
             </View>
@@ -145,7 +140,6 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.background,
     },
     header: {
-        // AuthHeader handles padding
     },
     content: {
         flex: 1,
@@ -170,22 +164,7 @@ const styles = StyleSheet.create({
     previewImage: {
         width: scale(150),
         height: scale(150),
-        marginBottom: -verticalScale(10), // Stick to bottom
-    },
-    inputContainer: {
-        marginBottom: verticalScale(20),
-    },
-    input: {
-        backgroundColor: Colors.white,
-        borderWidth: 1,
-        borderColor: Colors.border,
-        borderRadius: moderateScale(25),
-        paddingHorizontal: moderateScale(20),
-        paddingVertical: moderateScale(12),
-        fontSize: moderateScale(14),
-        fontFamily: Theme.fontFamily.medium,
-        color: Colors.text,
-        ...Theme.shadow.sm, // Using shadow from theme if available, otherwise it's fine
+        marginBottom: -verticalScale(10),
     },
     gridContainer: {
         flex: 1,
@@ -200,7 +179,7 @@ const styles = StyleSheet.create({
         marginBottom: verticalScale(10),
     },
     gridItem: {
-        width: '23%', // 4 columns
+        width: '23%',
         aspectRatio: 1,
     },
     gridItemSelected: {
@@ -227,11 +206,7 @@ const styles = StyleSheet.create({
     nextButton: {
         width: moderateScale(50),
         height: moderateScale(50),
-        backgroundColor: Colors.background, // Or black/white depending on theme. 
-        // Screenshot shows an arrow on white bg, likely floating or just at bottom right.
-        // Let's assume standard 'next' behavior.
-        // Wait, screenshot shows a simple arrow icon in bottom right.
-        // I'll make it simple.
+        backgroundColor: Colors.background,
         alignItems: 'center',
         justifyContent: 'center',
 

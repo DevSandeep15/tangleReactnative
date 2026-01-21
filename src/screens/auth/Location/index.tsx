@@ -12,7 +12,9 @@ import Toast from 'react-native-toast-message';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Location'>;
 
-const LocationScreen: React.FC<Props> = ({ navigation }) => {
+const LocationScreen: React.FC<Props> = ({ navigation, route }) => {
+    console.log(route.params);
+    const { email, name, age, gender, password } = route.params;
     const [societyName, setSocietyName] = useState('');
     const [flatNumber, setFlatNumber] = useState('');
 
@@ -38,12 +40,16 @@ const LocationScreen: React.FC<Props> = ({ navigation }) => {
         }
 
         console.log({ societyName, flatNumber });
-        Toast.show({
-            type: 'success',
-            text1: 'Location Saved',
-            text2: 'Start exploring Tangle!',
+
+        navigation.navigate('Interests', {
+            email,
+            name,
+            age,
+            gender,
+            password,
+            society_name: societyName.trim(),
+            flat_number: flatNumber.trim(),
         });
-        navigation.navigate('Interests');
     };
 
     return (
@@ -58,7 +64,7 @@ const LocationScreen: React.FC<Props> = ({ navigation }) => {
                     onBackPress={() => navigation.goBack()}
                 />
 
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.content}>
                             <TextField

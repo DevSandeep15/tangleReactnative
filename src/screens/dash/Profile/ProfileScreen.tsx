@@ -7,6 +7,8 @@ import type { ProfileScreenProps } from '../../../navigation/types';
 import Header from '../../../components/commonHeader/Header';
 import { ICONS } from '../../../constants/icons';
 import { IMAGES } from '../../../constants/images';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { logout } from '../../../store/slices/authSlice';
 
 const INTERESTS = [
     { id: '1', label: 'Sports', icon: '🎾', color: Colors.skyBlue },
@@ -44,6 +46,13 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, backgroundColor
 );
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
+    const dispatch = useAppDispatch();
+    const { user } = useAppSelector(state => state.auth);
+
+    const handleLogout = () => {
+        dispatch(logout());
+    };
+
     const SETTINGS_OPTIONS: SettingOption[] = [
         {
             id: '1',
@@ -68,7 +77,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             label: 'Logout',
             icon: ICONS.logout,
             isDestructive: true,
-            onPress: () => console.log('Logout pressed'),
+            onPress: handleLogout,
         },
     ];
 
@@ -85,18 +94,18 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 {/* Profile Card */}
                 <View style={styles.profileCard}>
                     <View style={styles.avatarContainer}>
-                        <Image source={IMAGES.dummyImage} style={styles.avatar} resizeMode='contain' />
+                        <Text style={{ fontSize: moderateScale(50) }}>{user?.emoji || '👤'}</Text>
                     </View>
-                    <Text style={styles.userName}>Ajay Talwar</Text>
+                    <Text style={styles.userName}>{user?.name || 'User'}</Text>
 
                     <View style={styles.infoRow}>
                         <Image source={ICONS.location} style={styles.infoIcon} resizeMode="contain" />
-                        <Text style={styles.infoText}>Block C, Sector 62, Noida</Text>
+                        <Text style={styles.infoText}>{user?.society_name || 'Society Not Set'}</Text>
                     </View>
 
                     <View style={styles.infoRow}>
                         <Image source={ICONS.location} style={styles.infoIcon} resizeMode="contain" />
-                        <Text style={styles.infoText}>Flat 562/11-A</Text>
+                        <Text style={styles.infoText}>Flat {user?.flat_number || 'N/A'}</Text>
                     </View>
                 </View>
 
@@ -128,11 +137,19 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 {/* My Interests Area */}
                 <Text style={styles.sectionTitle}>My Interests</Text>
                 <View style={styles.interestsContainer}>
-                    {INTERESTS.map((interest) => (
-                        <View key={interest.id} style={[styles.interestPill, { backgroundColor: interest.color }]}>
-                            <Text style={styles.interestText}>{interest.icon} {interest.label}</Text>
-                        </View>
-                    ))}
+                    {user?.preferred_interest?.length > 0 ? (
+                        user.preferred_interest.map((interest: string, index: number) => (
+                            <View key={index} style={[styles.interestPill, { backgroundColor: Colors.skyBlue }]}>
+                                <Text style={styles.interestText}>{interest}</Text>
+                            </View>
+                        ))
+                    ) : (
+                        INTERESTS.map((interest) => (
+                            <View key={interest.id} style={[styles.interestPill, { backgroundColor: interest.color }]}>
+                                <Text style={styles.interestText}>{interest.icon} {interest.label}</Text>
+                            </View>
+                        ))
+                    )}
                 </View>
 
                 {/* Settings Section */}

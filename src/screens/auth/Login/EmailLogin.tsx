@@ -5,80 +5,76 @@ import {
     StyleSheet,
     SafeAreaView,
     TouchableOpacity,
-    KeyboardAvoidingView,
-    Platform,
-    TouchableWithoutFeedback,
-    Keyboard,
+    Image,
+    ScrollView,
     StatusBar,
-    ActivityIndicator
+    Platform,
+    Keyboard,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    TouchableWithoutFeedback
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
-import { moderateScale, verticalScale } from 'react-native-size-matters';
-import Toast from 'react-native-toast-message';
-import { AuthHeader } from '../../../components/authHeader/AuthHeader';
+import { IMAGES } from '../../../constants/images';
+import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
+import { ICONS } from '../../../constants/icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TextField } from '../../../components/TextField/TextField';
 import { AuthButton } from '../../../components/Button/AuthButton';
-import { sendSignupOtp, clearError } from '../../../store/slices/authSlice';
+import { login, clearError } from '../../../store/slices/authSlice';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import Toast from 'react-native-toast-message';
+import { AuthHeader } from '../../../components/authHeader/AuthHeader';
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
+type Props = NativeStackScreenProps<AuthStackParamList, 'EmailLogin'>;
 
-const SignupScreen: React.FC<Props> = ({ navigation }) => {
+const EmailLoginScreen: React.FC<Props> = ({ navigation }) => {
+    const insets = useSafeAreaInsets();
     const dispatch = useAppDispatch();
     const { loading, error: authError } = useAppSelector(state => state.auth);
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
-    const validateEmail = (email: string) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
-
-    const handleNext = async () => {
-        Keyboard.dismiss();
-        if (!email.trim()) {
+    const handleLogin = async () => {
+        if (!email.trim() || !password.trim()) {
             Toast.show({
                 type: 'error',
-                text1: 'Email Required',
-                text2: 'Please enter your email address.',
+                text1: 'Required',
+                text2: 'Please enter both email and password',
             });
             return;
         }
 
-        if (!validateEmail(email)) {
-            Toast.show({
-                type: 'error',
-                text1: 'Invalid Email',
-                text2: 'Please enter a valid email address.',
-            });
-            return;
-        }
+        const loginData = {
+            email: email.trim(),
+            password: password.trim(),
+        };
 
-        const resultAction = await dispatch(sendSignupOtp(email.trim()));
+        const resultAction = await dispatch(login(loginData));
 
-        if (sendSignupOtp.fulfilled.match(resultAction)) {
+        if (login.fulfilled.match(resultAction)) {
             const result = resultAction.payload;
-            if (result.success || result.status === 200) {
+            if (result.success || result.token) {
                 Toast.show({
                     type: 'success',
-                    text1: 'OTP Sent',
-                    text2: 'Verification code sent to your email',
+                    text1: 'Welcome Back!',
+                    text2: 'Login successful',
                 });
-                navigation.navigate('Verification', { email: email.trim() });
             } else {
                 Toast.show({
                     type: 'error',
-                    text1: 'Failed',
-                    text2: result.message || 'Failed to send OTP',
+                    text1: 'Login Failed',
+                    text2: result.message || 'Something went wrong',
                 });
             }
-        } else if (sendSignupOtp.rejected.match(resultAction)) {
+        } else if (login.rejected.match(resultAction)) {
             Toast.show({
                 type: 'error',
-                text1: 'Failed',
-                text2: (resultAction.payload as string) || 'Failed to send OTP',
+                text1: 'Login Failed',
+                text2: (resultAction.payload as string) || 'Something went wrong',
             });
         }
     };
@@ -91,30 +87,39 @@ const SignupScreen: React.FC<Props> = ({ navigation }) => {
                 style={styles.keyboardAvoidingView}
             >
                 <AuthHeader
-                    title="Can we get your email, please?"
-                    subtitle="We use your email to keep your account secure and send important community updates."
+                    title="Log in with Email"
+                    subtitle="Enter your credentials to continue"
                     onBackPress={() => navigation.goBack()}
                 />
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                     <View style={styles.content}>
-                        {/* Input Section */}
                         <View style={styles.inputContainer}>
                             <TextField
-                                label="Email Id"
+                                label="Email"
                                 placeholder="Enter your email"
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
-                                returnKeyType="done"
                             />
+                            <TextField
+                                label="Password"
+                                placeholder="Enter your password"
+                                value={password}
+                                onChangeText={setPassword}
+                                isPassword
+                                secureTextEntry
+                            />
+
+                            <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('ForgotPassword')}>
+                                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                            </TouchableOpacity>
                         </View>
 
-                        {/* Next Button */}
                         <View style={styles.footer}>
                             <AuthButton
-                                title="Next"
-                                onPress={handleNext}
+                                title="Login"
+                                onPress={handleLogin}
                                 loading={loading}
                             />
                         </View>
@@ -139,14 +144,21 @@ const styles = StyleSheet.create({
         marginTop: verticalScale(20)
     },
     inputContainer: {
-        // marginTop: verticalScale(20),
+        gap: verticalScale(10),
+    },
+    forgotPassword: {
+        alignSelf: 'flex-end',
+        marginTop: verticalScale(5),
+    },
+    forgotPasswordText: {
+        fontSize: moderateScale(13),
+        fontFamily: Theme.fontFamily.medium,
+        color: Colors.textSecondary,
     },
     footer: {
-        flex: 1,
-        marginBottom: verticalScale(40),
+        marginTop: verticalScale(40),
         alignItems: 'center',
-        marginTop: verticalScale(20)
     },
 });
 
-export default SignupScreen;
+export default EmailLoginScreen;

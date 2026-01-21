@@ -12,11 +12,13 @@ import { CustomSwitch } from '../../../components/Switch/CustomSwitch';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'NotificationPreference'>;
 
-const NotificationPreferenceScreen: React.FC<Props> = ({ navigation }) => {
+const NotificationPreferenceScreen: React.FC<Props> = ({ navigation, route }) => {
+    console.log('route.params', route.params);
     const insets = useSafeAreaInsets();
+    const { email, name, age, gender, password, society_name, flat_number, preferred_interest, emoji_name, emoji } = route.params;
 
-    const [activityAlerts, setActivityAlerts] = useState(false);
-    const [eventReminders, setEventReminders] = useState(false);
+    const [activityAlerts, setActivityAlerts] = useState(true);
+    const [eventReminders, setEventReminders] = useState(true);
     const [chatNotifications, setChatNotifications] = useState(true);
 
     const handleDone = () => {
@@ -25,7 +27,22 @@ const NotificationPreferenceScreen: React.FC<Props> = ({ navigation }) => {
             eventReminders,
             chatNotifications
         });
-        navigation.navigate('FinishAuth');
+
+        navigation.navigate('FinishAuth', {
+            email,
+            name,
+            age,
+            gender,
+            password,
+            society_name,
+            flat_number,
+            preferred_interest,
+            emoji_name,
+            emoji,
+            activity_alerts: activityAlerts,
+            event_reminders: eventReminders,
+            chat_notifications: chatNotifications,
+        });
     };
 
     const renderPreferenceItem = (
@@ -126,7 +143,7 @@ const styles = StyleSheet.create({
         borderRadius: moderateScale(20),
         paddingHorizontal: moderateScale(15),
         paddingVertical: moderateScale(12),
-        ...Theme.shadow.sm, // Add subtle shadow if available in theme
+        ...Theme.shadow.sm,
     },
     preferenceDescription: {
         fontSize: moderateScale(13),

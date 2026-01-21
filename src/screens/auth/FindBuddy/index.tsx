@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ScrollView, Platform, DeviceEventEmitter } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
 import { Colors } from '../../../constants/colors';
@@ -9,39 +9,90 @@ import { AuthHeader } from '../../../components/authHeader/AuthHeader';
 import { AuthButton } from '../../../components/Button/AuthButton';
 import { IMAGES } from '../../../constants/images';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { registerUser, clearError } from '../../../store/slices/authSlice';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import Toast from 'react-native-toast-message';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'FindBuddy'>;
 
 // Mock Data
 const buddiesData = [
-    { id: '1', name: 'Suresh Sharma', avatar: IMAGES.avatar1, bgColor: '#FFE5B4' },
-    { id: '2', name: 'Aditya Kapoor', avatar: IMAGES.avatar2, bgColor: '#E6E6FA' },
-    { id: '3', name: 'Omkar jha', avatar: IMAGES.avatar3, bgColor: '#FFE5B4' },
-    { id: '4', name: 'Ayush Singh', avatar: IMAGES.avatar4, bgColor: '#FFFACD' },
-    { id: '5', name: 'Mehak Sardana', avatar: IMAGES.avatar5, bgColor: '#FFFACD' },
-    { id: '6', name: 'Navya pratap singh', avatar: IMAGES.avatar6, bgColor: '#FFFACD' },
-    { id: '7', name: 'Diya Singh', avatar: IMAGES.avatar7, bgColor: '#FFFACD' },
+    { id: '65b8f2c9c3a2d45a9b123451', name: 'Suresh Sharma', avatar: IMAGES.avatar1, bgColor: '#FFE5B4' },
+    { id: '65b8f2c9c3a2d45a9b123452', name: 'Aditya Kapoor', avatar: IMAGES.avatar2, bgColor: '#E6E6FA' },
+    { id: '65b8f2c9c3a2d45a9b123453', name: 'Omkar jha', avatar: IMAGES.avatar3, bgColor: '#FFE5B4' },
+    { id: '65b8f2c9c3a2d45a9b123454', name: 'Ayush Singh', avatar: IMAGES.avatar4, bgColor: '#FFFACD' },
+    { id: '65b8f2c9c3a2d45a9b123455', name: 'Mehak Sardana', avatar: IMAGES.avatar5, bgColor: '#FFFACD' },
+    { id: '65b8f2c9c3a2d45a9b123456', name: 'Navya pratap singh', avatar: IMAGES.avatar6, bgColor: '#FFFACD' },
+    { id: '65b8f2c9c3a2d45a9b123457', name: 'Diya Singh', avatar: IMAGES.avatar7, bgColor: '#FFFACD' },
 ];
 
 
-const FindBuddyScreen: React.FC<Props> = ({ navigation }) => {
+const FindBuddyScreen: React.FC<Props> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
+    const dispatch = useAppDispatch();
+    const { loading, error: authError } = useAppSelector(state => state.auth);
     const [sentRequests, setSentRequests] = useState<string[]>([]);
+
+    const params = route.params;
 
     const handleSendRequest = (id: string) => {
         setSentRequests([...sentRequests, id]);
     };
 
-    const handleNext = () => {
-        // Emit login event to switch to MainNavigator
-        DeviceEventEmitter.emit('LOGIN');
+    const handleNext = async () => {
+        // Construct the payload for complete profile API
+        const payload = {
+            name: params.name,
+            email: params.email,
+            password: params.password,
+            age: params.age,
+            gender: params.gender,
+            society_name: params.society_name,
+            flat_number: params.flat_number,
+            preferred_interest: params.preferred_interest,
+            emoji_name: params.emoji_name,
+            emoji: params.emoji,
+            activity_alerts: params.activity_alerts,
+            event_reminders: params.event_reminders,
+            chat_notifications: params.chat_notifications,
+            buddies: sentRequests.length > 0 ? sentRequests[0] : "65b8f2c9c3a2d45a9b123456" // Mock or first selected buddy
+        };
+        const resultAction = await dispatch(registerUser(payload));
+
+        if (registerUser.fulfilled.match(resultAction)) {
+            const result = resultAction.payload;
+            if (result.success || result.token) {
+                Toast.show({
+                    type: 'success',
+                    text1: 'Welcome!',
+                    text2: 'Account created successfully',
+                });
+                // No need to navigate manually, AppNavigator reacts to state.auth.isAuthenticated
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Registration Failed',
+                    text2: result.message || 'Failed to complete profile',
+                });
+            }
+        } else if (registerUser.rejected.match(resultAction)) {
+            Toast.show({
+                type: 'error',
+                text1: 'Registration Failed',
+                text2: (resultAction.payload as string) || 'Failed to complete profile',
+            });
+        }
     };
 
     const renderItem = ({ item }: { item: typeof buddiesData[0] }) => {
         const isRequestSent = sentRequests.includes(item.id);
 
         return (
-            <View style={[styles.card]}>
+            <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => handleSendRequest(item.id)}
+                style={[styles.card, isRequestSent && { opacity: 0.7 }]}
+            >
                 <View style={styles.cardContent}>
                     {/* Avatar */}
                     <View style={[styles.avatarContainer, { backgroundColor: item.bgColor }]}>
@@ -52,15 +103,16 @@ const FindBuddyScreen: React.FC<Props> = ({ navigation }) => {
                     <Text style={styles.nameText}>{item.name}</Text>
 
                     {/* Send Request Button (Icon) */}
-                    {!isRequestSent ? (
-                        <TouchableOpacity onPress={() => handleSendRequest(item.id)} activeOpacity={0.7} style={styles.actionIconContainer}>
-                            <Image source={IMAGES.sendRequest} style={styles.actionIcon} resizeMode="contain" tintColor={Colors.black} />
-                        </TouchableOpacity>
-                    ) : (
-                        <View style={styles.actionIconContainer} />
-                    )}
+                    <View style={styles.actionIconContainer}>
+                        <Image
+                            source={isRequestSent ? '' : IMAGES.sendRequest}
+                            style={styles.actionIcon}
+                            resizeMode="contain"
+                            tintColor={Colors.black}
+                        />
+                    </View>
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 
@@ -84,12 +136,11 @@ const FindBuddyScreen: React.FC<Props> = ({ navigation }) => {
                             title="Next"
                             onPress={handleNext}
                             style={styles.nextButton}
+                            loading={loading}
                         />
                     </View>
                 )}
             />
-
-
         </SafeAreaView>
     );
 };
@@ -102,7 +153,7 @@ const styles = StyleSheet.create({
     listContent: {
         paddingHorizontal: Theme.spacing.lg,
         paddingTop: verticalScale(10),
-        paddingBottom: verticalScale(80), // Space for footer
+        paddingBottom: verticalScale(80),
     },
     card: {
         flexDirection: 'row',
@@ -147,7 +198,6 @@ const styles = StyleSheet.create({
     actionIcon: {
         width: moderateScale(25),
         height: moderateScale(25),
-        tintColor: Colors.white,
     },
     footer: {
         alignItems: 'center',
@@ -155,7 +205,7 @@ const styles = StyleSheet.create({
     },
     nextButton: {
         backgroundColor: Colors.blue,
-        width: moderateScale(150),
+        minWidth: moderateScale(150),
         height: moderateScale(45)
     }
 });

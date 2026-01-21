@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, ViewStyle, TextStyle, KeyboardTypeOptions, TextInputProps } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ViewStyle, TextStyle, KeyboardTypeOptions, TextInputProps, TouchableOpacity } from 'react-native';
 import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
@@ -10,6 +10,7 @@ interface TextFieldProps extends TextInputProps {
     containerStyle?: ViewStyle;
     inputStyle?: TextStyle;
     labelStyle?: TextStyle;
+    isPassword?: boolean;
 }
 
 export const TextField: React.FC<TextFieldProps> = ({
@@ -18,6 +19,7 @@ export const TextField: React.FC<TextFieldProps> = ({
     placeholder,
     onChangeText,
     secureTextEntry,
+    isPassword,
     keyboardType,
     error,
     containerStyle,
@@ -26,8 +28,13 @@ export const TextField: React.FC<TextFieldProps> = ({
     ...props
 }) => {
     const [isFocused, setIsFocused] = useState(false);
+    const [showPassword, setShowPassword] = useState(!secureTextEntry);
     const hasValue = value && value.length > 0;
     const isActive = isFocused || hasValue;
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
     return (
         <View style={[styles.container, containerStyle]}>
@@ -46,7 +53,7 @@ export const TextField: React.FC<TextFieldProps> = ({
                     onChangeText={onChangeText}
                     placeholder={placeholder}
                     placeholderTextColor={Colors.textSecondary}
-                    secureTextEntry={secureTextEntry}
+                    secureTextEntry={isPassword ? !showPassword : secureTextEntry}
                     keyboardType={keyboardType}
                     style={[styles.input, inputStyle]}
                     cursorColor={Colors.primary}
@@ -62,6 +69,11 @@ export const TextField: React.FC<TextFieldProps> = ({
                     }}
                     {...props}
                 />
+                {isPassword && (
+                    <TouchableOpacity onPress={togglePasswordVisibility} style={styles.eyeButton}>
+                        <Text style={styles.eyeText}>{showPassword ? 'Hide' : 'Show'}</Text>
+                    </TouchableOpacity>
+                )}
             </View>
             {error && (
                 <Text style={styles.errorText}>{error}</Text>
@@ -86,7 +98,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: moderateScale(15),
         height: verticalScale(40),
         borderWidth: 1,
-        justifyContent: 'center',
+        flexDirection: 'row',
+        alignItems: 'center',
         ...Theme.shadow?.sm,
     },
     inputError: {
@@ -98,6 +111,14 @@ const styles = StyleSheet.create({
         color: Colors.text,
         padding: 0,
         flex: 1,
+    },
+    eyeButton: {
+        paddingHorizontal: moderateScale(5),
+    },
+    eyeText: {
+        fontSize: moderateScale(11),
+        fontFamily: Theme.fontFamily.bold,
+        color: Colors.textSecondary,
     },
     errorText: {
         fontSize: moderateScale(12),

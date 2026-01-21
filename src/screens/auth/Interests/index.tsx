@@ -24,7 +24,7 @@ const interestsData: InterestItem[] = [
     { id: '2', name: 'Food & Drinks', image: IMAGES.foodImg },
     { id: '3', name: 'Gaming', image: IMAGES.gameImg },
     { id: '4', name: 'Music', image: IMAGES.musicImg },
-    { id: '5', name: 'YK', image: IMAGES.natureImg },
+    { id: '5', name: 'Nature', image: IMAGES.natureImg },
     { id: '6', name: 'Football', image: IMAGES.footballImg },
     { id: '7', name: 'Gym', image: IMAGES.gymImg },
     { id: '8', name: 'Technology', image: IMAGES.techImg },
@@ -34,15 +34,16 @@ const interestsData: InterestItem[] = [
     { id: '12', name: 'Tennis', image: IMAGES.tennisImg },
 ];
 
-const InterestsScreen: React.FC<Props> = ({ navigation }) => {
+const InterestsScreen: React.FC<Props> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
+    const { email, name, age, gender, password, society_name, flat_number } = route.params;
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
-    const toggleInterest = (id: string) => {
-        if (selectedInterests.includes(id)) {
-            setSelectedInterests(selectedInterests.filter(item => item !== id));
+    const toggleInterest = (name: string) => {
+        if (selectedInterests.includes(name)) {
+            setSelectedInterests(selectedInterests.filter(item => item !== name));
         } else {
-            setSelectedInterests([...selectedInterests, id]);
+            setSelectedInterests([...selectedInterests, name]);
         }
     };
 
@@ -55,24 +56,29 @@ const InterestsScreen: React.FC<Props> = ({ navigation }) => {
             });
             return;
         }
-        console.log('Selected Interests:', selectedInterests);
-        Toast.show({
-            type: 'success',
-            text1: 'All set!',
-            text2: 'Welcome to Tangle!',
+        console.log('Selected Interests names:', selectedInterests);
+
+        navigation.navigate('CreateAvatar', {
+            email,
+            name,
+            age,
+            gender,
+            password,
+            society_name,
+            flat_number,
+            preferred_interest: selectedInterests,
         });
-        navigation.navigate('CreateAvatar');
     };
 
     const renderItem = ({ item }: { item: InterestItem }) => {
-        const isSelected = selectedInterests.includes(item.id);
+        const isSelected = selectedInterests.includes(item.name);
         return (
             <TouchableOpacity
                 style={[
                     styles.itemContainer,
                     { backgroundColor: isSelected ? Colors.skyBlue : Colors.backgroundSecondary }
                 ]}
-                onPress={() => toggleInterest(item.id)}
+                onPress={() => toggleInterest(item.name)}
                 activeOpacity={0.8}
             >
                 <Image source={item.image} style={styles.itemImage} resizeMode="contain" />
@@ -151,20 +157,6 @@ const styles = StyleSheet.create({
         marginTop: verticalScale(30),
         alignItems: 'center',
         paddingHorizontal: Theme.spacing.lg,
-    },
-    doneButton: {
-        backgroundColor: Colors.pink,
-        paddingVertical: verticalScale(12),
-        paddingHorizontal: moderateScale(30),
-        borderRadius: moderateScale(25),
-        marginBottom: verticalScale(15),
-        width: '80%',
-        alignItems: 'center',
-    },
-    doneButtonText: {
-        fontSize: moderateScale(16),
-        fontFamily: Theme.fontFamily.bold,
-        color: Colors.black, // Dark text on light button
     },
     footerNote: {
         fontSize: moderateScale(11),

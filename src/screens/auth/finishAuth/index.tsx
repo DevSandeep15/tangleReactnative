@@ -7,11 +7,11 @@ import { Theme } from '../../../constants/theme';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 import { AuthHeader } from '../../../components/authHeader/AuthHeader';
 import { AuthButton } from '../../../components/Button/AuthButton';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'FinishAuth'>;
 
-const FinishAuthScreen: React.FC<Props> = ({ navigation }) => {
+const FinishAuthScreen: React.FC<Props> = ({ navigation, route }) => {
+    const params = route.params;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -27,7 +27,7 @@ const FinishAuthScreen: React.FC<Props> = ({ navigation }) => {
                 <View style={styles.buttonContainer}>
                     <AuthButton
                         title='Start Exploring'
-                        onPress={() => navigation.navigate('FindBuddy')}
+                        onPress={() => navigation.navigate('FindBuddy', params)}
                         style={{ backgroundColor: Colors.darkgreen }}
                     />
                 </View>

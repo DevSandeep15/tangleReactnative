@@ -13,14 +13,17 @@ import Toast from 'react-native-toast-message';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'SetupProfile'>;
 
-const SetupProfileScreen: React.FC<Props> = ({ navigation }) => {
+const SetupProfileScreen: React.FC<Props> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
+    const { email } = route.params || {};
+
     const [name, setName] = useState('');
     const [age, setAge] = useState('');
     const [gender, setGender] = useState('');
+    const [password, setPassword] = useState('');
     const [showGenderDropdown, setShowGenderDropdown] = useState(false);
 
-    const genderOptions = ['Men', 'Women', 'Other'];
+    const genderOptions = ['Male', 'Female', 'Other'];
 
     const toggleGenderDropdown = () => {
         setShowGenderDropdown(!showGenderDropdown);
@@ -38,12 +41,18 @@ const SetupProfileScreen: React.FC<Props> = ({ navigation }) => {
 
         if (!age.trim()) {
             return 'Please enter your age';
-        } else if (isNaN(Number(age)) || Number(age) < 13) {
-            return 'Please enter a valid age (13+)';
+        } else if (isNaN(Number(age)) || Number(age) < 13 || Number(age) > 100) {
+            return 'Please enter a valid age (13-100)';
         }
 
         if (!gender.trim()) {
             return 'Please select your gender';
+        }
+
+        if (!password.trim()) {
+            return 'Please set a password';
+        } else if (password.length < 6) {
+            return 'Password should be at least 6 characters';
         }
 
         return null; // No errors
@@ -53,19 +62,20 @@ const SetupProfileScreen: React.FC<Props> = ({ navigation }) => {
     const handleNext = () => {
         const error = validate();
         if (!error) {
-            console.log({ name, age, gender });
-            // Proceed to next screen (or backend logic)
-            Toast.show({
-                type: 'success',
-                text1: 'Profile Setup',
-                text2: 'Profile details saved successfully!',
+            console.log({ email, name, age, gender, password });
+
+            navigation.navigate('Location', {
+                email,
+                name: name.trim(),
+                age: Number(age),
+                gender: gender,
+                password: password,
             });
-            navigation.navigate('Location');
         } else {
             Toast.show({
                 type: 'error',
                 text1: 'Incomplete Details',
-                text2: error, // Show the specific validation error here
+                text2: error,
             });
         }
     };
@@ -82,7 +92,7 @@ const SetupProfileScreen: React.FC<Props> = ({ navigation }) => {
                     onBackPress={() => navigation.goBack()}
                 />
 
-                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={styles.content}>
                             <TextField
@@ -98,6 +108,15 @@ const SetupProfileScreen: React.FC<Props> = ({ navigation }) => {
                                 value={age}
                                 onChangeText={setAge}
                                 keyboardType="numeric"
+                            />
+
+                            <TextField
+                                label="Set a password"
+                                placeholder="Password"
+                                value={password}
+                                onChangeText={setPassword}
+                                isPassword
+                                secureTextEntry
                             />
 
                             {/* Gender Selection */}
@@ -167,7 +186,7 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.white,
         borderRadius: moderateScale(15),
         padding: moderateScale(15),
-        marginTop: verticalScale(-10), // Overlap visually or adjust spacing
+        marginTop: verticalScale(-10),
         marginBottom: verticalScale(15),
         ...Theme.shadow.sm,
         borderWidth: 1,
@@ -205,22 +224,9 @@ const styles = StyleSheet.create({
     },
     footer: {
         flex: 1,
-        marginBottom: verticalScale(40),
+        marginBottom: verticalScale(20),
         alignItems: 'center',
         marginTop: verticalScale(20)
-    },
-    button: {
-        width: moderateScale(120),
-        height: moderateScale(50),
-        borderRadius: moderateScale(25),
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: Colors.skyBlue
-    },
-    buttonText: {
-        fontSize: moderateScale(16),
-        fontFamily: Theme.fontFamily.bold,
-        color: Colors.text,
     },
     footerText: {
         fontSize: Theme.fontSize.sm,

@@ -20,13 +20,27 @@ const DashHeader: React.FC<DashHeaderProps> = ({
     onChatPress,
 }) => {
     const insets = useSafeAreaInsets();
+
+    const renderAvatar = () => {
+        if (typeof userAvatar === 'string' && userAvatar.length <= 4) {
+            return (
+                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center' }]}>
+                    <Text style={{ fontSize: moderateScale(20) }}>{userAvatar}</Text>
+                </View>
+            );
+        }
+        return (
+            <Image
+                source={userAvatar}
+                style={styles.avatar}
+            />
+        );
+    };
+
     return (
         <View style={[styles.container, { paddingTop: insets.top }]}>
             <View style={styles.leftSection}>
-                <Image
-                    source={userAvatar}
-                    style={styles.avatar}
-                />
+                {renderAvatar()}
                 <View style={styles.textContainer}>
                     <Text style={styles.welcomeText}>Welcome back,</Text>
                     <Text style={styles.userNameText}>{userName}</Text>

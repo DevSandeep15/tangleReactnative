@@ -10,41 +10,62 @@ import { AuthHeader } from '../../../components/authHeader/AuthHeader';
 import { OTPInput } from '../../../components/OTPInput/OTPInput';
 import { AuthButton } from '../../../components/Button/AuthButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { verifySignupOtp, clearError } from '../../../store/slices/authSlice';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Verification'>;
 
 const VerificationScreen: React.FC<Props> = ({ navigation, route }) => {
 
     const insets = useSafeAreaInsets();
+    const dispatch = useAppDispatch();
+    const { loading, error: authError } = useAppSelector(state => state.auth);
     const [otpCode, setOtpCode] = useState('');
     const [isPinReady, setIsPinReady] = useState(false);
 
-    const { email } = route?.params;
+    const { email } = route?.params || {};
 
-    const handleNext = () => {
+    const handleNext = async () => {
         Keyboard.dismiss();
         if (!isPinReady) {
             Toast.show({
                 type: 'error',
                 text1: 'Incomplete Code',
                 text2: 'Please fill the code sent on your email',
-                position: 'top',
-                visibilityTime: 3000,
             });
             return;
         }
 
-        // Verify OTP logic here...
-        console.log('Verifying code:', otpCode);
-        Toast.show({
-            type: 'success',
-            text1: 'Verified',
-            text2: 'Email verified successfully!',
-            position: 'top',
-            visibilityTime: 3000,
-        });
-        navigation.replace('SetupProfile');
-        Keyboard.dismiss();
+        try {
+            const result = await dispatch(verifySignupOtp({
+                email: email,
+                otp: otpCode,
+            })).unwrap();
+
+            console.log('--- Verify OTP Result ---', result);
+
+            if (result.success) {
+                Toast.show({
+                    type: 'success',
+                    text1: 'Verified',
+                    text2: 'Email verified successfully!',
+                });
+                navigation.replace('SetupProfile', { email });
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Verification Failed',
+                    text2: result.message || 'Verification failed',
+                });
+            }
+        } catch (error: any) {
+            console.log('--- Verify OTP Error ---', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Verification Failed',
+                text2: error || 'An unexpected error occurred',
+            });
+        }
     };
 
     const handleChangeEmail = () => {
@@ -85,6 +106,7 @@ const VerificationScreen: React.FC<Props> = ({ navigation, route }) => {
                             <AuthButton
                                 title="Next"
                                 onPress={handleNext}
+                                loading={loading}
                             />
                         </View>
                     </View>
@@ -111,7 +133,6 @@ const styles = StyleSheet.create({
         marginTop: verticalScale(20),
     },
     inputContainer: {
-        // marginTop: verticalScale(20),
     },
     label: {
         fontSize: moderateScale(14),
@@ -125,18 +146,6 @@ const styles = StyleSheet.create({
         marginBottom: verticalScale(40),
         alignItems: 'center',
         marginTop: verticalScale(50)
-    },
-    button: {
-        width: moderateScale(120),
-        height: moderateScale(50),
-        borderRadius: moderateScale(25),
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: Colors.skyBlue
-    },
-    buttonText: {
-        fontSize: moderateScale(16),
-        fontFamily: Theme.fontFamily.bold,
     },
     bottom: {
         fontSize: moderateScale(12),
