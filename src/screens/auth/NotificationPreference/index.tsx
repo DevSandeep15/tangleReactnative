@@ -15,7 +15,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'NotificationPreference'
 const NotificationPreferenceScreen: React.FC<Props> = ({ navigation, route }) => {
     console.log('route.params', route.params);
     const insets = useSafeAreaInsets();
-    const { email, name, age, gender, password, society_name, flat_number, preferred_interest, emoji_name, emoji } = route.params;
+    const { email, name, age, gender, password, society_name, flat_number, preferred_interest, emoji_name, emoji, emoji_url } = route.params;
 
     const [activityAlerts, setActivityAlerts] = useState(true);
     const [eventReminders, setEventReminders] = useState(true);
@@ -39,6 +39,7 @@ const NotificationPreferenceScreen: React.FC<Props> = ({ navigation, route }) =>
             preferred_interest,
             emoji_name,
             emoji,
+            emoji_url,
             activity_alerts: activityAlerts,
             event_reminders: eventReminders,
             chat_notifications: chatNotifications,

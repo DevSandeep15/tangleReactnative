@@ -3,7 +3,7 @@ import ImagePicker, { Options } from 'react-native-image-crop-picker';
 
 const DEFAULT_OPTIONS: Options = {
     width: 1200,
-    height: 800,
+    height: 1200,
     cropping: true,
     mediaType: 'photo',
 };

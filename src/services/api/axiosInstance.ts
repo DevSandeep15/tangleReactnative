@@ -2,9 +2,10 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosR
 import { store } from '../../store/store';
 
 const axiosInstance: AxiosInstance = axios.create({
-    timeout: 10000,
+    timeout: 30000, // Increased timeout for Render free tier
     headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
     },
 });
 
@@ -12,11 +13,18 @@ const axiosInstance: AxiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         const state = store.getState();
-        const token = state.auth.token; // Assuming auth slice stores token
+        const token = state.auth.token;
 
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers.Authorization = token;
         }
+
+        // CRITICAL: If sending FormData, we MUST remove the default Content-Type header
+        // to let the browser/native layer set it with the correct boundary.
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+
         return config;
     },
     (error) => {

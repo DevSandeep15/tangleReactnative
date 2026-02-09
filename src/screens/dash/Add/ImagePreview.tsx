@@ -6,26 +6,33 @@ import { Theme } from '../../../constants/theme';
 import ImagePickerService from '../../../services/ImagePickerService';
 
 interface Props {
-    imageUri: string | null;
-    onImageSelected: (uri: string | null) => void;
+    imageUris: string[];
+    onRemoveImage: (index: number) => void;
 }
 
-const ImagePreview: React.FC<Props> = ({ imageUri, onImageSelected }) => {
-    if (!imageUri) return null;
+const ImagePreview: React.FC<Props> = ({ imageUris, onRemoveImage }) => {
+    if (imageUris.length === 0) return null;
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <Text style={styles.headerEmoji}>📸</Text>
-                    <Text style={styles.headerTitle}>Image Preview</Text>
+                    <Text style={styles.headerTitle}>Image Preview ({imageUris.length})</Text>
                 </View>
-                <TouchableOpacity onPress={() => onImageSelected(null)}>
-                    <Text style={styles.closeIcon}>✕</Text>
-                </TouchableOpacity>
             </View>
-            <View style={styles.imageContainer}>
-                <Image source={{ uri: imageUri }} style={styles.image} resizeMode="cover" />
+            <View style={styles.scrollContainer}>
+                {imageUris.map((uri, index) => (
+                    <View key={index} style={styles.imageWrapper}>
+                        <Image source={{ uri }} style={styles.image} resizeMode="cover" />
+                        <TouchableOpacity
+                            style={styles.deleteButton}
+                            onPress={() => onRemoveImage(index)}
+                        >
+                            <Text style={styles.deleteIcon}>✕</Text>
+                        </TouchableOpacity>
+                    </View>
+                ))}
             </View>
         </View>
     );
@@ -33,12 +40,13 @@ const ImagePreview: React.FC<Props> = ({ imageUri, onImageSelected }) => {
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: Theme.spacing.xs,
+        marginTop: Theme.spacing.md,
         padding: Theme.spacing.md,
         borderRadius: Theme.borderRadius.xl,
         borderWidth: 1,
         borderColor: Colors.border,
-        backgroundColor: Colors.buttonColor
+        backgroundColor: Colors.buttonColor,
+        ...Theme.shadow.sm,
     },
     header: {
         flexDirection: 'row',
@@ -48,6 +56,7 @@ const styles = StyleSheet.create({
     },
     headerLeft: {
         flexDirection: 'row',
+        alignItems: 'center',
     },
     headerEmoji: {
         fontSize: Theme.fontSize.sm,
@@ -58,33 +67,39 @@ const styles = StyleSheet.create({
         fontFamily: Theme.fontFamily.medium,
         color: Colors.text,
     },
-    closeIcon: {
-        fontSize: Theme.fontSize.sm,
-        color: Colors.textSecondary,
-        fontFamily: Theme.fontFamily.semiBold,
+    scrollContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: scale(10),
     },
-    imageContainer: {
-        width: '100%',
-        height: verticalScale(150),
-        borderRadius: Theme.borderRadius.lg,
-        backgroundColor: '#858585',
-        justifyContent: 'center',
-        alignItems: 'center',
+    imageWrapper: {
+        width: scale(80),
+        height: scale(80),
+        borderRadius: Theme.borderRadius.md,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: Colors.border,
-    },
-    placeholderContainer: {
-        borderStyle: 'dashed',
+        position: 'relative',
     },
     image: {
         width: '100%',
         height: '100%',
     },
-    placeholderText: {
-        color: Colors.textSecondary,
-        fontSize: Theme.fontSize.sm,
-        fontFamily: Theme.fontFamily.regular,
+    deleteButton: {
+        position: 'absolute',
+        top: 2,
+        right: 2,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: scale(10),
+        width: scale(18),
+        height: scale(18),
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    deleteIcon: {
+        color: 'white',
+        fontSize: scale(10),
+        fontWeight: 'bold',
     },
 });
 

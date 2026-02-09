@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, StatusBar, TextInput, Platform } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
@@ -8,10 +8,10 @@ import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 import { AuthHeader } from '../../../components/authHeader/AuthHeader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IMAGES } from '../../../constants/images';
+import { useAppDispatch } from '../../../store/hooks';
+import { getAvatars } from '../../../store/slices/authSlice';
 
 
-// Mock Data - Repeating images to simulate the grid
-// Define available background colors
 const bgColors = [
     Colors.lightPink,
     '#FFE5B4',
@@ -26,35 +26,39 @@ const bgColors = [
 // Helper to assign random color
 const getRandomColor = () => bgColors[Math.floor(Math.random() * bgColors.length)];
 
-// Mock Data - Avatars with assigned random colors
-const avatarsData = [
-    { id: '1', image: IMAGES.avatar1, backgroundColor: getRandomColor(), name: 'Happy', emoji: '😊' },
-    { id: '2', image: IMAGES.avatar2, backgroundColor: getRandomColor(), name: 'Cool', emoji: '😎' },
-    { id: '3', image: IMAGES.avatar3, backgroundColor: getRandomColor(), name: 'Wink', emoji: '😉' },
-    { id: '4', image: IMAGES.avatar4, backgroundColor: getRandomColor(), name: 'Love', emoji: '😍' },
-    { id: '5', image: IMAGES.avatar5, backgroundColor: getRandomColor(), name: 'Excited', emoji: '🤩' },
-    { id: '6', image: IMAGES.avatar6, backgroundColor: getRandomColor(), name: 'Laugh', emoji: '😂' },
-    { id: '7', image: IMAGES.avatar7, backgroundColor: getRandomColor(), name: 'Calm', emoji: '😌' },
-    { id: '8', image: IMAGES.avatar8, backgroundColor: getRandomColor(), name: 'Smart', emoji: '🤓' },
-    { id: '9', image: IMAGES.avatar9, backgroundColor: getRandomColor(), name: 'Playful', emoji: '😜' },
-    { id: '10', image: IMAGES.avatar10, backgroundColor: getRandomColor(), name: 'Friendly', emoji: '😇' },
-    { id: '11', image: IMAGES.avatar11, backgroundColor: getRandomColor(), name: 'Star', emoji: '🌟' },
-    { id: '12', image: IMAGES.avatar12, backgroundColor: getRandomColor(), name: 'Strong', emoji: '💪' },
-];
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'CreateAvatar'>;
 
 const CreateAvatarScreen: React.FC<Props> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
+    const dispatch = useAppDispatch()
     const { email, name, age, gender, password, society_name, flat_number, preferred_interest } = route.params;
+    const [avatars, setAvatars] = useState<any>([])
+    const [selectedAvatarId, setSelectedAvatarId] = useState<string | number | null>('1');
 
-    const [selectedAvatarId, setSelectedAvatarId] = useState('1');
+    const selectedAvatar = avatars.find((a: any) => (a._id || a.id) === selectedAvatarId) || avatars[0];
+    const currentAvatarImage = selectedAvatar?.image;
+    const currentAvatarBg = selectedAvatar?.backgroundColor;
 
-    const selectedAvatar = avatarsData.find(a => a.id === selectedAvatarId) || avatarsData[0];
-    const currentAvatarImage = selectedAvatar.image;
-    const currentAvatarBg = selectedAvatar.backgroundColor;
-
+    useEffect(() => {
+        const fetchavatar = async () => {
+            const data = await dispatch(getAvatars()).unwrap()
+            console.log('dfsdgfsd', data)
+            // Ensure each avatar has a background color, either from API or random
+            const dataWithColors = data.map((item: any) => ({
+                ...item,
+                backgroundColor: item.backgroundColor || item.background_color || getRandomColor()
+            }));
+            setAvatars(dataWithColors)
+            if (dataWithColors.length > 0) {
+                const firstId = dataWithColors[0]._id || dataWithColors[0].id;
+                setSelectedAvatarId(firstId)
+            }
+        }
+        fetchavatar()
+    }, []);
     const handleNext = () => {
+        if (!selectedAvatar) return;
         console.log('Selected Avatar:', selectedAvatar.name);
 
         navigation.navigate('NotificationPreference', {
@@ -66,29 +70,47 @@ const CreateAvatarScreen: React.FC<Props> = ({ navigation, route }) => {
             society_name,
             flat_number,
             preferred_interest,
-            emoji_name: selectedAvatar.name,
-            emoji: selectedAvatar.emoji,
+            emoji_name: selectedAvatar.name || 'Avatar',
+            emoji: selectedAvatar.emoji || '',
+            emoji_url: selectedAvatar.image || '',
         });
     };
 
-    const renderItem = ({ item }: { item: typeof avatarsData[0] }) => {
-        const isSelected = selectedAvatarId === item.id;
+    const renderItem = ({ item }: { item: any }) => {
+        const itemId = item._id || item.id;
+        const isSelected = selectedAvatarId === itemId;
         return (
             <TouchableOpacity
                 style={[
                     styles.gridItem,
                     isSelected && styles.gridItemSelected
                 ]}
-                onPress={() => setSelectedAvatarId(item.id)}
+                onPress={() => setSelectedAvatarId(itemId)}
                 activeOpacity={0.8}
             >
 
                 <View style={[styles.avatarWrapper, { backgroundColor: item.backgroundColor }]}>
-                    <Image source={item.image} style={styles.gridImage} resizeMode="cover" />
+                    <Image source={{ uri: item.image }} style={styles.gridImage} resizeMode="cover" />
                 </View>
             </TouchableOpacity>
         );
     };
+
+    if (avatars.length === 0) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <StatusBar barStyle="dark-content" backgroundColor={Colors.background} />
+                <View style={styles.header}>
+                    <AuthHeader
+                        title="Time to Create Your Emoji! 🙄"
+                        subtitle="Loading your vibe... 😎"
+                        onBackPress={() => navigation.goBack()}
+                    />
+                </View>
+                {/* You could add an ActivityIndicator here */}
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -107,14 +129,16 @@ const CreateAvatarScreen: React.FC<Props> = ({ navigation, route }) => {
                 {/* Large Preview */}
                 <View style={styles.previewContainer}>
                     <View style={[styles.previewBackground, { backgroundColor: currentAvatarBg }]}>
-                        <Image source={currentAvatarImage} style={styles.previewImage} resizeMode="contain" />
+                        {currentAvatarImage && (
+                            <Image source={{ uri: currentAvatarImage }} style={styles.previewImage} resizeMode="contain" />
+                        )}
                     </View>
                 </View>
 
                 {/* Avatar Grid */}
                 <View style={styles.gridContainer}>
                     <FlatList
-                        data={avatarsData}
+                        data={avatars}
                         renderItem={renderItem}
                         keyExtractor={item => item.id}
                         numColumns={4}

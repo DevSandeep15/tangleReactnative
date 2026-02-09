@@ -1,33 +1,28 @@
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import React, { useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    SafeAreaView,
-    TouchableOpacity,
-    Image,
-    ScrollView,
-    StatusBar,
-    Platform,
     Keyboard,
-    ActivityIndicator,
     KeyboardAvoidingView,
-    TouchableWithoutFeedback
+    Platform,
+    SafeAreaView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../../navigation/types';
-import { Colors } from '../../../constants/colors';
-import { Theme } from '../../../constants/theme';
-import { IMAGES } from '../../../constants/images';
-import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
-import { ICONS } from '../../../constants/icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TextField } from '../../../components/TextField/TextField';
-import { AuthButton } from '../../../components/Button/AuthButton';
-import { login, clearError } from '../../../store/slices/authSlice';
-import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { moderateScale, verticalScale } from 'react-native-size-matters';
 import Toast from 'react-native-toast-message';
 import { AuthHeader } from '../../../components/authHeader/AuthHeader';
+import { AuthButton } from '../../../components/Button/AuthButton';
+import { TextField } from '../../../components/TextField/TextField';
+import { Colors } from '../../../constants/colors';
+import { Theme } from '../../../constants/theme';
+import { AuthStackParamList } from '../../../navigation/types';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { login } from '../../../store/slices/authSlice';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'EmailLogin'>;
 

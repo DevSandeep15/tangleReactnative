@@ -58,6 +58,7 @@ export type AuthStackParamList = {
         preferred_interest: string[];
         emoji_name: string;
         emoji: string;
+        emoji_url: string;
     };
     FinishAuth: {
         email: string;
@@ -70,6 +71,7 @@ export type AuthStackParamList = {
         preferred_interest: string[];
         emoji_name: string;
         emoji: string;
+        emoji_url: string;
         activity_alerts: boolean;
         event_reminders: boolean;
         chat_notifications: boolean;
@@ -85,6 +87,7 @@ export type AuthStackParamList = {
         preferred_interest: string[];
         emoji_name: string;
         emoji: string;
+        emoji_url: string;
         activity_alerts: boolean;
         event_reminders: boolean;
         chat_notifications: boolean;

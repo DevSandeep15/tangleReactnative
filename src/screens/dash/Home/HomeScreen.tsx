@@ -1,6 +1,16 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, FlatList, SafeAreaView, StatusBar, DeviceEventEmitter } from 'react-native';
-import { useAppSelector } from '../../../store/hooks';
+import React, { useEffect, useCallback } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    SafeAreaView,
+    StatusBar,
+    DeviceEventEmitter,
+    ActivityIndicator,
+    RefreshControl
+} from 'react-native';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import type { HomeScreenProps } from '../../../navigation/types';
@@ -10,54 +20,101 @@ import CategoryFilters from './CategoryFilters';
 import PostCard from './PostCard';
 import { moderateScale } from 'react-native-size-matters';
 import { IMAGES } from '../../../constants/images';
+import { getPosts } from '../../../store/slices/postSlice';
 
 const RECOMMENDED_DATA = [
     { id: '1', name: 'Suresh', role: 'Science Teacher', image: IMAGES.dummyAvatar },
     { id: '2', name: 'Apoorva', role: 'Dance Teacher', image: IMAGES.dummyAvatar },
     { id: '3', name: 'Joshep', role: 'Software Engineer', image: IMAGES.dummyAvatar },
-    { id: '4', name: 'Apoorva', role: 'Dance Teacher', image: IMAGES.dummyAvatar },
-];
-
-const POSTS_DATA = [
-    {
-        id: '1',
-        authorName: 'Ishani verma',
-        authorAvatar: 'https://i.pravatar.cc/150?u=ishani',
-        timeAgo: '30 mins ago',
-        tag: 'Discussion',
-        content: "finally met the faces I've been walking past for months\nsmall starts, good energy, new connections",
-        hashtags: ['TangleTogether', 'CommunityVibes'],
-        postImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800',
-        views: 142,
-        likes: 20,
-        comments: 20,
-    },
-    {
-        id: '2',
-        authorName: 'Ishani verma',
-        authorAvatar: 'https://i.pravatar.cc/150?u=ishani',
-        timeAgo: '30 mins ago',
-        tag: 'Discussion',
-        content: "finally met the faces I've been walking past for months\nsmall starts, good energy, new connections",
-        hashtags: ['TangleTogether', 'CommunityVibes'],
-        postImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=800',
-        views: 142,
-        likes: 20,
-        comments: 20,
-    }
 ];
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+    const dispatch = useAppDispatch();
     const [selectedCategory, setSelectedCategory] = React.useState('All');
     const { user } = useAppSelector(state => state.auth);
+    const { posts, loading } = useAppSelector(state => state.post);
+
+    useEffect(() => {
+        dispatch(getPosts());
+    }, [dispatch]);
+
+    const onRefresh = useCallback(() => {
+        dispatch(getPosts());
+    }, [dispatch]);
 
     const filteredPosts = React.useMemo(() => {
-        if (selectedCategory === 'All') return POSTS_DATA;
-        return POSTS_DATA.filter(post => post.tag === selectedCategory);
-    }, [selectedCategory]);
+        if (!posts) return [];
+        // Filter by category (post_type is 'discussion' in API, while UI uses Title Case)
+        if (selectedCategory === 'All') return posts;
+        return posts.filter(post =>
+            post.post_type?.toLowerCase() === selectedCategory.toLowerCase()
+        );
+    }, [posts, selectedCategory]);
 
-    const handleCommentPress = () => {
-        DeviceEventEmitter.emit('OPEN_COMMENTS');
+    const handleCommentPress = useCallback((postId: string) => {
+        DeviceEventEmitter.emit('OPEN_COMMENTS', { postId });
+    }, []);
+
+    const renderHeader = () => (
+        <View>
+            {/* Recommended Section */}
+            <View style={styles.sectionHeader}>
+                <View style={styles.recommendedBadge}>
+                    <Text style={styles.recommendedText}>Recommended 👥</Text>
+                </View>
+            </View>
+
+            <FlatList
+                data={RECOMMENDED_DATA}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                    <RecommendedCard
+                        name={item.name}
+                        role={item.role}
+                        image={item.image}
+                    />
+                )}
+                contentContainerStyle={styles.recommendedList}
+            />
+
+            {/* Categories */}
+            <CategoryFilters
+                selectedCategory={selectedCategory}
+                onSelect={setSelectedCategory}
+            />
+        </View>
+    );
+
+    const renderPost = ({ item }: { item: any }) => {
+        // Map API data to PostCard props
+        return (
+            <PostCard
+                postId={item._id}
+                authorName={item.user?.name || 'User'}
+                authorAvatar={item.user?.emoji || 'https://i.pravatar.cc/150?u=' + item.user?._id}
+                timeAgo={new Date(item.createdAt).toLocaleDateString()} // Basic formatting
+                tag={item.post_type?.charAt(0).toUpperCase() + item.post_type?.slice(1)}
+                content={item.desc}
+                hashtags={item.tags || []}
+                postImages={item.image}
+                views={item.views || 0}
+                likes={item.total_likes || 0}
+                comments={item.total_comments || 0}
+                initialIsLiked={item.is_liked}
+                onCommentPress={() => handleCommentPress(item._id)}
+            />
+        );
+    };
+
+    const renderEmpty = () => {
+        if (loading) return null;
+        return (
+            <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No posts found</Text>
+            </View>
+        );
     };
 
     return (
@@ -70,53 +127,27 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 onChatPress={() => navigation.navigate('Inbox')}
             />
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Recommended Section */}
-                <View style={styles.sectionHeader}>
-                    <View style={styles.recommendedBadge}>
-                        <Text style={styles.recommendedText}>Recommended 👥</Text>
-                    </View>
-                </View>
-
-                <FlatList
-                    data={RECOMMENDED_DATA}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <RecommendedCard
-                            name={item.name}
-                            role={item.role}
-                            image={item.image}
-                        />
-                    )}
-                    contentContainerStyle={styles.recommendedList}
-                />
-
-                {/* Categories */}
-                <CategoryFilters
-                    selectedCategory={selectedCategory}
-                    onSelect={setSelectedCategory}
-                />
-
-                {/* Posts Feed */}
-                <View style={styles.feedContainer}>
-                    {filteredPosts.map((post) => (
-                        <PostCard
-                            key={post.id}
-                            {...post}
-                            onCommentPress={handleCommentPress}
-                        />
-                    ))}
-                    {filteredPosts.length === 0 && (
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No posts in this category</Text>
-                        </View>
-                    )}
-                </View>
-
-                <View style={{ height: moderateScale(20) }} />
-            </ScrollView>
+            <FlatList
+                data={filteredPosts}
+                keyExtractor={(item) => item._id}
+                renderItem={renderPost}
+                ListHeaderComponent={renderHeader}
+                ListEmptyComponent={renderEmpty}
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={loading}
+                        onRefresh={onRefresh}
+                        colors={[Colors.primary]}
+                    />
+                }
+                contentContainerStyle={styles.listContent}
+                ListFooterComponent={<View style={{ height: moderateScale(20) }} />}
+                initialNumToRender={5}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+                removeClippedSubviews={true}
+            />
         </SafeAreaView>
     );
 };
@@ -125,6 +156,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.background,
+    },
+    listContent: {
+        // No flex: 1 here
     },
     sectionHeader: {
         paddingHorizontal: Theme.spacing.md,
@@ -149,9 +183,7 @@ const styles = StyleSheet.create({
     },
     recommendedList: {
         paddingHorizontal: Theme.spacing.md,
-    },
-    feedContainer: {
-        flex: 1,
+        marginBottom: Theme.spacing.md,
     },
     emptyContainer: {
         padding: Theme.spacing.xxl,

@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { postRequest } from '../../services/api/apiMethods';
+import { getRequest, postRequest } from '../../services/api/apiMethods';
 import { URLS } from '../../services/api/urls';
 
 interface AuthState {
@@ -8,6 +8,7 @@ interface AuthState {
     user: any | null;
     loading: boolean;
     error: string | null;
+    avatars: any[];
 }
 
 const initialState: AuthState = {
@@ -16,10 +17,11 @@ const initialState: AuthState = {
     user: null,
     loading: false,
     error: null,
+    avatars: [],
 };
 
 // Async Thunks
-export const login = createAsyncThunk(
+export const login = createAsyncThunk<any, any>(
     'auth/login',
     async (credentials: any, { rejectWithValue }) => {
         try {
@@ -34,7 +36,7 @@ export const login = createAsyncThunk(
     }
 );
 
-export const sendSignupOtp = createAsyncThunk(
+export const sendSignupOtp = createAsyncThunk<any, string>(
     'auth/sendSignupOtp',
     async (email: string, { rejectWithValue }) => {
         try {
@@ -49,7 +51,7 @@ export const sendSignupOtp = createAsyncThunk(
     }
 );
 
-export const verifySignupOtp = createAsyncThunk(
+export const verifySignupOtp = createAsyncThunk<any, { email: string; otp: string }>(
     'auth/verifySignupOtp',
     async (data: { email: string; otp: string }, { rejectWithValue }) => {
         try {
@@ -64,7 +66,7 @@ export const verifySignupOtp = createAsyncThunk(
     }
 );
 
-export const registerUser = createAsyncThunk(
+export const registerUser = createAsyncThunk<any, any>(
     'auth/registerUser',
     async (userData: any, { rejectWithValue }) => {
         try {
@@ -75,6 +77,20 @@ export const registerUser = createAsyncThunk(
         } catch (error: any) {
             console.log('--- Register Thunk Error ---', error.response?.data || error.message);
             return rejectWithValue(error.response?.data?.message || error.message || 'Registration failed');
+        }
+    }
+);
+
+export const getAvatars = createAsyncThunk<any, void>(
+    'auth/getAvatars',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await getRequest<any>(URLS.AUTH.GET_AVATARS);
+            // getRequest returns response.data already.
+            return response.data || response;
+        } catch (error: any) {
+            console.log('--- Avatars Thunk Error ---', error.response?.data || error.message);
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch avatars');
         }
     }
 );
@@ -167,6 +183,19 @@ const authSlice = createSlice({
                 }
             })
             .addCase(registerUser.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            // Get Avatars
+            .addCase(getAvatars.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getAvatars.fulfilled, (state, action) => {
+                state.loading = false;
+                state.avatars = action.payload;
+            })
+            .addCase(getAvatars.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });

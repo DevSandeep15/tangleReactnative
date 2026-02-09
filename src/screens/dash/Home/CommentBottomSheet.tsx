@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useState, forwardRef, useImperativeHandle, memo } from 'react';
+import React, { useMemo, useCallback, useState, forwardRef, useImperativeHandle, memo, useEffect } from 'react';
 import {
     View,
     Text,
@@ -6,6 +6,7 @@ import {
     Image,
     TouchableOpacity,
     Keyboard,
+    ActivityIndicator,
 } from 'react-native';
 import BottomSheet, {
     BottomSheetBackdrop,
@@ -17,6 +18,8 @@ import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { addComment, getComments } from '../../../store/slices/postSlice';
 
 interface Comment {
     id: string;
@@ -27,6 +30,7 @@ interface Comment {
 }
 
 interface Props {
+    postId: string | null;
     onClose: () => void;
 }
 
@@ -36,7 +40,7 @@ export type CommentBottomSheetRef = {
 };
 
 // Memoized footer component to prevent remounting on every character
-const CommentFooter = memo(({ onPost, ...props }: any) => {
+const CommentFooter = memo(({ onPost, userAvatar, ...props }: any) => {
     const insets = useSafeAreaInsets();
     const [text, setText] = useState('');
 
@@ -44,7 +48,7 @@ const CommentFooter = memo(({ onPost, ...props }: any) => {
         if (text.trim()) {
             onPost(text.trim());
             setText('');
-            Keyboard.dismiss();
+            // Removed Keyboard.dismiss() to keep user in flow
         }
     };
 
@@ -52,7 +56,7 @@ const CommentFooter = memo(({ onPost, ...props }: any) => {
         <BottomSheetFooter {...props} bottomInset={insets.bottom}>
             <View style={styles.footerContainer}>
                 <Image
-                    source={{ uri: 'https://i.pravatar.cc/150?u=me' }}
+                    source={{ uri: userAvatar || 'https://i.pravatar.cc/150?u=me' }}
                     style={styles.inputAvatar}
                 />
                 <View style={styles.inputOuterContainer}>
@@ -85,49 +89,74 @@ const CommentFooter = memo(({ onPost, ...props }: any) => {
     );
 });
 
-const CommentBottomSheet = forwardRef<CommentBottomSheetRef, Props>(({ onClose }, ref) => {
+const CommentBottomSheet = forwardRef<CommentBottomSheetRef, Props>(({ postId, onClose }, ref) => {
+    const dispatch = useAppDispatch();
     const sheetRef = React.useRef<BottomSheet>(null);
     const snapPoints = useMemo(() => ['50%', '95%'], []);
+    const { user } = useAppSelector(state => state.auth);
+    const [localComments, setLocalComments] = useState<Comment[]>([]);
+    const [isPosting, setIsPosting] = useState(false);
 
-    const [comments, setComments] = useState<Comment[]>([
-        {
-            id: '1',
-            author: 'Suresh Singh',
-            text: 'Great capture! The lighting is perfect.',
-            avatar: 'https://i.pravatar.cc/150?u=suresh',
-            time: '10m',
-        },
-        {
-            id: '2',
-            author: 'Apoorva',
-            text: 'Looks like fun!',
-            avatar: 'https://i.pravatar.cc/150?u=apoorva',
-            time: '5m',
-        },
-        {
-            id: '3',
-            author: 'Vikram',
-            text: 'Where was this taken?',
-            avatar: 'https://i.pravatar.cc/150?u=vikram',
-            time: '2m',
-        },
-    ]);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Fetch and sync comments
+    useEffect(() => {
+        if (postId) {
+            const fetchComments = async () => {
+                setIsLoading(true);
+                try {
+                    const result = await dispatch(getComments(postId)).unwrap();
+                    // Transform API comments to our local UI interface
+                    const transformed = (result.comments || []).map((c: any) => ({
+                        id: c._id,
+                        author: c.user_id?.name || 'User',
+                        text: c.comment,
+                        avatar: c.user_id?.profile_image || 'https://i.pravatar.cc/150?u=' + c.user_id?._id,
+                        time: new Date(c.createdAt).toLocaleDateString(),
+                    }));
+                    setLocalComments(transformed);
+                } catch (error) {
+                    console.error('Error fetching comments:', error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchComments();
+        } else {
+            setLocalComments([]);
+        }
+    }, [postId, dispatch]);
 
     useImperativeHandle(ref, () => ({
         open: () => sheetRef.current?.snapToIndex(0),
         close: () => sheetRef.current?.close(),
     }));
 
-    const handleAddComment = useCallback((text: string) => {
+    const handleAddComment = useCallback(async (text: string) => {
+        if (!postId) return;
+
+        setIsPosting(true);
+
+        // Optimistic UI Update
         const newComment: Comment = {
             id: Date.now().toString(),
-            author: 'You',
+            author: user?.name || 'You',
             text: text,
-            avatar: 'https://i.pravatar.cc/150?u=me',
+            avatar: user?.emoji || 'https://i.pravatar.cc/150?u=me',
             time: 'Just now',
         };
-        setComments((prev) => [newComment, ...prev]);
-    }, []);
+        setLocalComments((prev) => [newComment, ...prev]);
+
+        try {
+            await dispatch(addComment({ postId, comment: text })).unwrap();
+            console.log('Comment added successfully');
+        } catch (error) {
+            console.error('Failed to add comment:', error);
+            // Optionally remove the optimistic comment on failure
+        } finally {
+            setIsPosting(false);
+        }
+    }, [postId, user, dispatch]);
 
     const renderBackdrop = useCallback(
         (props: any) => (
@@ -158,9 +187,13 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetRef, Props>(({ onClose }
     // Stabilized footer callback
     const renderFooter = useCallback(
         (props: any) => (
-            <CommentFooter onPost={handleAddComment} {...props} />
+            <CommentFooter
+                onPost={handleAddComment}
+                userAvatar={user?.emoji || user?.profile_image}
+                {...props}
+            />
         ),
-        [handleAddComment]
+        [handleAddComment, user]
     );
 
     return (
@@ -178,11 +211,12 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetRef, Props>(({ onClose }
             <View style={styles.container}>
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>Comments</Text>
+                    {isLoading && <ActivityIndicator size="small" color={Colors.primary} style={{ marginTop: 5 }} />}
                 </View>
 
                 <BottomSheetFlatList
-                    data={comments}
-                    keyExtractor={(item) => item.id}
+                    data={localComments}
+                    keyExtractor={(item: Comment) => item.id}
                     renderItem={renderComment}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}

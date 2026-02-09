@@ -15,6 +15,7 @@ if linkage != nil
 end
 
 target 'Tangle' do
+  pod 'GoogleMaps'
   config = use_native_modules!
 
   use_react_native!(

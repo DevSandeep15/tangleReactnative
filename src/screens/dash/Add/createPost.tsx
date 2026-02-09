@@ -21,6 +21,10 @@ import { Theme } from '../../../constants/theme';
 import { IMAGES } from '../../../constants/images';
 import ImagePickerService from '../../../services/ImagePickerService';
 import DatePicker from 'react-native-date-picker';
+import Geolocation from '@react-native-community/geolocation';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { createPost, getPosts } from '../../../store/slices/postSlice';
+import Toast from 'react-native-toast-message';
 
 // Custom Components
 import PostTypeSelector, { PostType } from './PostTypeSelector';
@@ -34,17 +38,23 @@ export type CreatePostBottomSheetRef = {
 };
 
 type Props = {
-    onPostSubmit?: (data: { text: string; type: PostType; image?: string; date?: Date }) => void;
+    onPostSubmit?: (data: any) => void;
 };
 
 const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
     ({ onPostSubmit }, ref) => {
         const insets = useSafeAreaInsets();
+        const dispatch = useAppDispatch();
+        const { user } = useAppSelector(state => state.auth);
+        const { loading: postLoading } = useAppSelector(state => state.post);
+
         const [postText, setPostText] = useState('');
         const [selectedType, setSelectedType] = useState<PostType>('Discussion');
-        const [selectedImage, setSelectedImage] = useState<string | null>(null);
+        const [selectedImages, setSelectedImages] = useState<string[]>([]);
         const [eventDate, setEventDate] = useState<Date | null>(null);
         const [isDatePickerOpen, setDatePickerOpen] = useState(false);
+        const [location, setLocation] = useState<any>(null);
+        const [isLocationLoading, setIsLocationLoading] = useState(false);
 
         const snapPoints = useMemo(() => ['95%'], []);
         const sheetRef = React.useRef<BottomSheet>(null);
@@ -60,28 +70,136 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
             Keyboard.dismiss();
         };
 
-        const handlePost = () => {
-            if (postText.trim() || selectedImage) {
-                onPostSubmit?.({
-                    text: postText.trim(),
-                    type: selectedType,
-                    image: selectedImage || undefined,
-                    date: eventDate || undefined,
-                });
-                resetForm();
-                sheetRef.current?.close();
-                Keyboard.dismiss();
+        const getCurrentLocation = () => {
+            setIsLocationLoading(true);
+            Geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+
+                    try {
+                        // Reverse Geocoding using OpenStreetMap (Nominatim)
+                        // Note: In production, use a dedicated service like Google Maps or Mapbox
+                        const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+                            {
+                                headers: {
+                                    'User-Agent': 'TangleApp'
+                                }
+                            }
+                        );
+                        const data = await response.json();
+                        const address = data.display_name || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+
+                        setLocation({
+                            latitude,
+                            longitude,
+                            address: address
+                        });
+                    } catch (error) {
+                        console.log('Geocoding Error:', error);
+                        setLocation({
+                            latitude,
+                            longitude,
+                            address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+                        });
+                    } finally {
+                        setIsLocationLoading(false);
+                    }
+                },
+                (error) => {
+                    setIsLocationLoading(false);
+                    console.log('Location Error:', error);
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Location Error',
+                        text2: 'Could not get your current location',
+                    });
+                },
+                { enableHighAccuracy: false, timeout: 20000, maximumAge: 10000 }
+            );
+        };
+        const handlePost = async () => {
+            if (!user?._id && !user?.id) {
+                Toast.show({ type: 'error', text1: 'User not logged in' });
+                return;
+            }
+
+            if (!postText.trim() && selectedImages.length === 0) {
+                Toast.show({ type: 'error', text1: 'Post cannot be empty' });
+                return;
+            }
+
+            const formData = new FormData();
+
+            // desc
+            formData.append('desc', postText.trim());
+
+            // post_type
+            formData.append('post_type', selectedType.toLowerCase());
+
+            // user_id
+            formData.append('user_id', user?._id || user?.id);
+
+            // location
+            formData.append('location', location?.address || 'mohali');
+
+            // tags
+            formData.append('tags', 'party,music,night');
+
+            // event_date
+            if (eventDate) {
+                formData.append('event_date', eventDate.toISOString());
+            }
+
+            // images (CRITICAL)
+            selectedImages.forEach((uri, index) => {
+                formData.append('images', {
+                    uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+                    name: `post_${index}.jpg`,
+                    type: 'image/jpeg',
+                } as any);
+            });
+
+            try {
+                const resultAction = await dispatch(createPost(formData));
+
+                if (createPost.fulfilled.match(resultAction)) {
+                    Toast.show({ type: 'success', text1: 'Post created!' });
+                    dispatch(getPosts()); // Refresh the feed
+                    resetForm();
+                    sheetRef.current?.close();
+                    onPostSubmit?.(resultAction.payload);
+                } else {
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: resultAction.payload as string,
+                    });
+                }
+            } catch (e) {
+                console.log('POST ERROR:', e);
             }
         };
+
 
         const resetForm = () => {
             setPostText('');
             setSelectedType('Discussion');
-            setSelectedImage(null);
+            setSelectedImages([]);
             setEventDate(null);
+            setLocation(null);
         };
 
         const handlePhotoPress = async () => {
+            if (selectedImages.length >= 4) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Limit Reached',
+                    text2: 'You can only upload up to 4 images.',
+                });
+                return;
+            }
+
             Alert.alert(
                 'Add Photo',
                 'Choose an option',
@@ -90,14 +208,14 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                         text: 'Take Photo',
                         onPress: async () => {
                             const path = await ImagePickerService.openCamera();
-                            if (path) setSelectedImage(path);
+                            if (path) setSelectedImages([...selectedImages, path]);
                         },
                     },
                     {
                         text: 'Choose from Gallery',
                         onPress: async () => {
                             const path = await ImagePickerService.openGallery();
-                            if (path) setSelectedImage(path);
+                            if (path) setSelectedImages([...selectedImages, path]);
                         },
                     },
                     { text: 'Cancel', style: 'cancel' },
@@ -131,7 +249,6 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                     backgroundStyle={styles.background}
                     keyboardBehavior="interactive"
                     keyboardBlurBehavior="restore"
-                    bottomInset={insets.bottom}
                 >
 
                     <View style={styles.container}>
@@ -180,15 +297,20 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
 
                             <ActionButtonsGrid
                                 onPhotoPress={handlePhotoPress}
-                                onLocationPress={() => Alert.alert('Location', 'Feature coming soon!')}
+                                onLocationPress={getCurrentLocation}
                                 onTagPeoplePress={() => Alert.alert('Tag People', 'Feature coming soon!')}
                                 onEventDatePress={() => setDatePickerOpen(true)}
                             />
 
                             <ImagePreview
-                                imageUri={selectedImage}
-                                onImageSelected={(uri) => setSelectedImage(uri)}
+                                imageUris={selectedImages}
+                                onRemoveImage={(index) => {
+                                    const newImages = [...selectedImages];
+                                    newImages.splice(index, 1);
+                                    setSelectedImages(newImages);
+                                }}
                             />
+
 
                             {eventDate && (
                                 <View style={styles.dateBadge}>
@@ -200,9 +322,32 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                                     </TouchableOpacity>
                                 </View>
                             )}
+
+                            {isLocationLoading && (
+                                <View style={styles.dateBadge}>
+                                    <Text style={styles.dateBadgeText}>📍 Fetching location...</Text>
+                                </View>
+                            )}
+
+                            {location && !isLocationLoading && (
+                                <View style={styles.locationContainer}>
+                                    <View style={styles.locationHeader}>
+                                        <Text style={styles.locationLabel}>📍 Current Location</Text>
+                                        <TouchableOpacity onPress={() => setLocation(null)}>
+                                            <Text style={styles.removeDate}>✕</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                    <TextInput
+                                        style={styles.locationInput}
+                                        value={location.address}
+                                        onChangeText={(text) => setLocation({ ...location, address: text })}
+                                        multiline
+                                    />
+                                </View>
+                            )}
                         </BottomSheetScrollView>
 
-                        <View style={[styles.footer, { paddingBottom: insets.bottom + scale(50) }]}>
+                        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Theme.spacing.md) }]}>
                             <TouchableOpacity
                                 style={styles.cancelButton}
                                 onPress={handleClose}
@@ -215,12 +360,12 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
 
                                 ]}
                                 onPress={handlePost}
-                                disabled={!(postText.trim() || selectedImage)}
+                                disabled={!(postText.trim() || selectedImages.length > 0)}
                             >
                                 <Text style={[
                                     styles.postButtonText,
-                                    { color: (postText.trim() || selectedImage) ? Colors.textSecondary : Colors.textTertiary }
-                                ]}>Post to Community</Text>
+                                    { color: (postText.trim() || selectedImages.length > 0) ? Colors.textSecondary : Colors.textTertiary }
+                                ]}>{postLoading ? 'Posting...' : 'Post to Community'}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -303,7 +448,7 @@ const styles = StyleSheet.create({
         borderColor: Colors.border,
         borderRadius: Theme.borderRadius.lg,
         padding: Theme.spacing.xs,
-        minHeight: verticalScale(160),
+        minHeight: verticalScale(120),
         marginTop: Theme.spacing.md,
         backgroundColor: Colors.white,
         ...Theme.shadow.sm,
@@ -313,7 +458,7 @@ const styles = StyleSheet.create({
         fontFamily: Theme.fontFamily.regular,
         color: Colors.text,
         textAlignVertical: 'top',
-        maxHeight: verticalScale(160),
+        maxHeight: verticalScale(120),
     },
     inputFooter: {
         flexDirection: 'row',
@@ -349,6 +494,32 @@ const styles = StyleSheet.create({
         color: Colors.error,
         fontWeight: 'bold',
     },
+    locationContainer: {
+        backgroundColor: Colors.white,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        borderRadius: Theme.borderRadius.lg,
+        padding: Theme.spacing.md,
+        marginTop: Theme.spacing.md,
+        ...Theme.shadow.sm,
+    },
+    locationHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: Theme.spacing.xs,
+    },
+    locationLabel: {
+        fontSize: Theme.fontSize.xs,
+        fontFamily: Theme.fontFamily.semiBold,
+        color: Colors.textSecondary,
+    },
+    locationInput: {
+        fontSize: Theme.fontSize.sm,
+        fontFamily: Theme.fontFamily.medium,
+        color: Colors.text,
+        padding: 0,
+    },
     footer: {
         flexDirection: 'row',
         paddingHorizontal: Theme.spacing.lg,
@@ -376,10 +547,10 @@ const styles = StyleSheet.create({
         fontFamily: Theme.fontFamily.semiBold,
     },
     postButton: {
+        width: scale(150),
         height: verticalScale(45),
         borderRadius: Theme.borderRadius.lg,
         backgroundColor: Colors.buttonColor,
-        paddingHorizontal: Theme.spacing.lg,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
@@ -389,6 +560,27 @@ const styles = StyleSheet.create({
     postButtonText: {
         fontSize: Theme.fontSize.sm,
         fontFamily: Theme.fontFamily.semiBold,
+    },
+    tagsWrapper: {
+        marginTop: Theme.spacing.md,
+        backgroundColor: Colors.white,
+        borderWidth: 1,
+        borderColor: Colors.border,
+        borderRadius: Theme.borderRadius.lg,
+        padding: Theme.spacing.md,
+        ...Theme.shadow.sm,
+    },
+    tagsLabel: {
+        fontSize: Theme.fontSize.xs,
+        fontFamily: Theme.fontFamily.semiBold,
+        color: Colors.textSecondary,
+        marginBottom: Theme.spacing.xs,
+    },
+    tagsInput: {
+        fontSize: Theme.fontSize.sm,
+        fontFamily: Theme.fontFamily.medium,
+        color: Colors.text,
+        padding: 0,
     },
 });
 

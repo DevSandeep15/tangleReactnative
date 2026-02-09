@@ -86,15 +86,19 @@ const MainNavigator = () => {
 
 const AppNavigator: React.FC = () => {
     const commentSheetRef = React.useRef<CommentBottomSheetRef>(null);
+    const [activePostId, setActivePostId] = React.useState<string | null>(null);
     const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
     console.log('--- AppNavigator Auth Status ---', isAuthenticated);
 
     React.useEffect(() => {
         RNBootSplash.hide({ fade: true });
 
-        const commentSubscription = DeviceEventEmitter.addListener('OPEN_COMMENTS', () => {
-            if (commentSheetRef.current) {
-                commentSheetRef.current.open();
+        const commentSubscription = DeviceEventEmitter.addListener('OPEN_COMMENTS', (data) => {
+            if (data?.postId) {
+                setActivePostId(data.postId);
+                if (commentSheetRef.current) {
+                    commentSheetRef.current.open();
+                }
             }
         });
 
@@ -109,7 +113,11 @@ const AppNavigator: React.FC = () => {
 
             <CommentBottomSheet
                 ref={commentSheetRef}
-                onClose={() => commentSheetRef.current?.close()}
+                postId={activePostId}
+                onClose={() => {
+                    commentSheetRef.current?.close();
+                    setActivePostId(null);
+                }}
             />
             <Toast />
         </View>
