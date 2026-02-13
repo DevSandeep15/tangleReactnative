@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { AuthStackParamList } from '../../../navigation/types';
 import { Colors } from '../../../constants/colors';
@@ -8,7 +8,7 @@ import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 import { AuthHeader } from '../../../components/authHeader/AuthHeader';
 import { AuthButton } from '../../../components/Button/AuthButton';
 import { IMAGES } from '../../../constants/images';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { registerUser, clearError } from '../../../store/slices/authSlice';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import Toast from 'react-native-toast-message';
@@ -51,7 +51,8 @@ const FindBuddyScreen: React.FC<Props> = ({ navigation, route }) => {
             flat_number: params.flat_number,
             preferred_interest: params.preferred_interest,
             emoji_name: params.emoji_name,
-            emoji: params.emoji,
+            emoji: params.emoji_url,
+
             activity_alerts: params.activity_alerts,
             event_reminders: params.event_reminders,
             chat_notifications: params.chat_notifications,

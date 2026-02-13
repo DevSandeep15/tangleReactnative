@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import React, { useEffect, useCallback, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, SafeAreaView, StatusBar, RefreshControl, ActivityIndicator } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import { moderateScale, verticalScale, scale } from 'react-native-size-matters';
@@ -8,7 +8,7 @@ import Header from '../../../components/commonHeader/Header';
 import { ICONS } from '../../../constants/icons';
 import { IMAGES } from '../../../constants/images';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
-import { logout } from '../../../store/slices/authSlice';
+import { logout, getProfile } from '../../../store/slices/authSlice';
 
 const INTERESTS = [
     { id: '1', label: 'Sports', icon: '🎾', color: Colors.skyBlue },
@@ -47,7 +47,26 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, backgroundColor
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     const dispatch = useAppDispatch();
-    const { user } = useAppSelector(state => state.auth);
+    const { user, loading } = useAppSelector(state => state.auth);
+    const [refreshing, setRefreshing] = useState(false);
+
+    const fetchProfileData = useCallback(async () => {
+        try {
+            await dispatch(getProfile()).unwrap();
+        } catch (error) {
+            console.error('Failed to fetch profile:', error);
+        }
+    }, [dispatch]);
+
+    useEffect(() => {
+        fetchProfileData();
+    }, [fetchProfileData]);
+
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchProfileData();
+        setRefreshing(false);
+    }, [fetchProfileData]);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -90,11 +109,29 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 style={styles.container}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={[Colors.primary]}
+                    />
+                }
             >
+                {loading && !refreshing && (
+                    <View style={styles.loaderContainer}>
+                        <ActivityIndicator color={Colors.primary} />
+                    </View>
+                )}
                 {/* Profile Card */}
                 <View style={styles.profileCard}>
                     <View style={styles.avatarContainer}>
-                        <Text style={{ fontSize: moderateScale(50) }}>{user?.emoji || '👤'}</Text>
+                        {user?.emoji ? (
+                            <Image source={{ uri: user.emoji }} style={styles.avatar} resizeMode="cover" />
+                        ) : (
+                            <View style={[styles.avatar, { backgroundColor: Colors.lightPink, justifyContent: 'center', alignItems: 'center' }]}>
+                                <Image source={ICONS.profileTab} style={{ width: moderateScale(40), height: moderateScale(40), tintColor: Colors.textSecondary }} />
+                            </View>
+                        )}
                     </View>
                     <Text style={styles.userName}>{user?.name || 'User'}</Text>
 
@@ -113,21 +150,21 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 <View style={styles.statsRow}>
                     <StatCard
                         label="Posts"
-                        value="12"
+                        value={user?.total_posts?.toString() || "0"}
                         icon={ICONS.book}
                         backgroundColor="#D1E4FF"
                         onPress={() => console.log('Posts pressed')}
                     />
                     <StatCard
                         label="Connections"
-                        value="34"
+                        value={user?.total_connections?.toString() || "0"}
                         icon={ICONS.handShake}
                         backgroundColor="#FFD1D1"
                         onPress={() => console.log('Connections pressed')}
                     />
                     <StatCard
                         label="Circles"
-                        value="8"
+                        value={user?.total_circles?.toString() || "0"}
                         icon={ICONS.star}
                         backgroundColor={Colors.darkgreen}
                         onPress={() => console.log('Circles pressed')}
@@ -206,7 +243,11 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: Theme.spacing.md,
-        // paddingBottom: Theme.spacing.xl,
+        paddingBottom: Theme.spacing.xl,
+    },
+    loaderContainer: {
+        paddingVertical: Theme.spacing.md,
+        alignItems: 'center',
     },
     profileCard: {
         backgroundColor: Colors.white,

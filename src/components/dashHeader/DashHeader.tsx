@@ -22,23 +22,27 @@ const DashHeader: React.FC<DashHeaderProps> = ({
     const insets = useSafeAreaInsets();
 
     const renderAvatar = () => {
-        if (typeof userAvatar === 'string' && userAvatar.length <= 4) {
+        if (!userAvatar) {
             return (
                 <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center' }]}>
-                    <Text style={{ fontSize: moderateScale(20) }}>{userAvatar}</Text>
+                    <Image source={ICONS.profileTab} style={[styles.icon, { tintColor: Colors.textSecondary }]} />
                 </View>
             );
         }
+
+        const source = typeof userAvatar === 'string' ? { uri: userAvatar } : userAvatar;
+
         return (
             <Image
-                source={userAvatar}
+                source={source}
                 style={styles.avatar}
+                resizeMode="cover"
             />
         );
     };
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={[styles.container]}>
             <View style={styles.leftSection}>
                 {renderAvatar()}
                 <View style={styles.textContainer}>

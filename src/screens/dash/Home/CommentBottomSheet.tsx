@@ -107,11 +107,12 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetRef, Props>(({ postId, o
                 try {
                     const result = await dispatch(getComments(postId)).unwrap();
                     // Transform API comments to our local UI interface
+                    console.log('result information==>', result)
                     const transformed = (result.comments || []).map((c: any) => ({
                         id: c._id,
                         author: c.user_id?.name || 'User',
                         text: c.comment,
-                        avatar: c.user_id?.profile_image || 'https://i.pravatar.cc/150?u=' + c.user_id?._id,
+                        avatar: c.user_id?.emoji || c.user_id?.profile_image || 'https://i.pravatar.cc/150?u=' + (c.user_id?._id || c.user_id),
                         time: new Date(c.createdAt).toLocaleDateString(),
                     }));
                     setLocalComments(transformed);
@@ -171,18 +172,21 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetRef, Props>(({ postId, o
         [onClose]
     );
 
-    const renderComment = useCallback(({ item }: { item: Comment }) => (
-        <View style={styles.commentItem}>
-            <Image source={{ uri: item.avatar }} style={styles.commentAvatar} />
-            <View style={styles.commentContent}>
-                <View style={styles.commentHeader}>
-                    <Text style={styles.commentAuthor}>{item.author}</Text>
-                    <Text style={styles.commentTime}>{item.time}</Text>
+    const renderComment = useCallback(({ item }: { item: Comment }) => {
+        console.log('item information==>', item)
+        return (
+            <View style={styles.commentItem}>
+                <Image source={{ uri: item.avatar }} style={styles.commentAvatar} />
+                <View style={styles.commentContent}>
+                    <View style={styles.commentHeader}>
+                        <Text style={styles.commentAuthor}>{item.author}</Text>
+                        <Text style={styles.commentTime}>{item.time}</Text>
+                    </View>
+                    <Text style={styles.commentText}>{item.text}</Text>
                 </View>
-                <Text style={styles.commentText}>{item.text}</Text>
             </View>
-        </View>
-    ), []);
+        )
+    }, []);
 
     // Stabilized footer callback
     const renderFooter = useCallback(

@@ -47,7 +47,7 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
         const dispatch = useAppDispatch();
         const { user } = useAppSelector(state => state.auth);
         const { loading: postLoading } = useAppSelector(state => state.post);
-
+        console.log('user information ==>', user)
         const [postText, setPostText] = useState('');
         const [selectedType, setSelectedType] = useState<PostType>('Discussion');
         const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -124,8 +124,13 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                 return;
             }
 
-            if (!postText.trim() && selectedImages.length === 0) {
-                Toast.show({ type: 'error', text1: 'Post cannot be empty' });
+            if (!postText.trim()) {
+                Toast.show({ type: 'error', text1: 'Please Add Description' });
+                return;
+            }
+
+            if (selectedImages.length === 0) {
+                Toast.show({ type: 'error', text1: 'Please add at least one image' });
                 return;
             }
 
@@ -347,7 +352,7 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                             )}
                         </BottomSheetScrollView>
 
-                        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Theme.spacing.md) }]}>
+                        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Theme.spacing.lg) }]}>
                             <TouchableOpacity
                                 style={styles.cancelButton}
                                 onPress={handleClose}
@@ -357,15 +362,15 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                             <TouchableOpacity
                                 style={[
                                     styles.postButton,
-
+                                    { opacity: (postText.trim() && selectedImages.length > 0) ? 1 : 0.6 }
                                 ]}
                                 onPress={handlePost}
-                                disabled={!(postText.trim() || selectedImages.length > 0)}
+                                disabled={!(postText.trim() && selectedImages.length > 0)}
                             >
                                 <Text style={[
                                     styles.postButtonText,
-                                    { color: (postText.trim() || selectedImages.length > 0) ? Colors.textSecondary : Colors.textTertiary }
-                                ]}>{postLoading ? 'Posting...' : 'Post to Community'}</Text>
+                                    { color: (postText.trim() || selectedImages.length > 0) ? Colors.text : Colors.textTertiary }
+                                ]}>{postLoading ? 'Posting...' : 'Post Community'}</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -523,15 +528,16 @@ const styles = StyleSheet.create({
     footer: {
         flexDirection: 'row',
         paddingHorizontal: Theme.spacing.lg,
-        paddingVertical: Theme.spacing.xs,
+        paddingVertical: Theme.spacing.sm,
         borderTopWidth: 1,
         borderTopColor: '#F2F2F2',
         backgroundColor: Colors.white,
         justifyContent: 'space-between',
+        alignItems: 'center',
     },
     cancelButton: {
         flex: 1,
-        height: verticalScale(45),
+        height: moderateScale(45),
         borderRadius: Theme.borderRadius.lg,
         justifyContent: 'center',
         alignItems: 'center',
@@ -547,8 +553,8 @@ const styles = StyleSheet.create({
         fontFamily: Theme.fontFamily.semiBold,
     },
     postButton: {
-        width: scale(150),
-        height: verticalScale(45),
+        flex: 1.5,
+        height: moderateScale(45),
         borderRadius: Theme.borderRadius.lg,
         backgroundColor: Colors.buttonColor,
         justifyContent: 'center',

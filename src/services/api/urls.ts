@@ -9,6 +9,7 @@ export const URLS = {
         RESET_PASSWORD: `${BASE_URL}/api/user/reset-password`,
         COMPLETE_SIGNUP: `${BASE_URL}/api/user/register`,
         GET_AVATARS: `${BASE_URL}/api/user/get-emojis`,
+        GET_PROFILE: `${BASE_URL}/api/user/get-profile`,
     },
     POST: {
         ADD_POST: `${BASE_URL}/api/user/add-post`,

@@ -1,10 +1,9 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import {
     View,
     Text,
     StyleSheet,
     FlatList,
-    SafeAreaView,
     StatusBar,
     DeviceEventEmitter,
     ActivityIndicator,
@@ -21,6 +20,7 @@ import PostCard from './PostCard';
 import { moderateScale } from 'react-native-size-matters';
 import { IMAGES } from '../../../constants/images';
 import { getPosts } from '../../../store/slices/postSlice';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const RECOMMENDED_DATA = [
     { id: '1', name: 'Suresh', role: 'Science Teacher', image: IMAGES.dummyAvatar },
@@ -42,9 +42,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         dispatch(getPosts());
     }, [dispatch]);
 
-    const filteredPosts = React.useMemo(() => {
+    const filteredPosts = useMemo(() => {
         if (!posts) return [];
-        // Filter by category (post_type is 'discussion' in API, while UI uses Title Case)
         if (selectedCategory === 'All') return posts;
         return posts.filter(post =>
             post.post_type?.toLowerCase() === selectedCategory.toLowerCase()
@@ -55,9 +54,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         DeviceEventEmitter.emit('OPEN_COMMENTS', { postId });
     }, []);
 
-    const renderHeader = () => (
+    const keyExtractor = useCallback((item: any) => item._id, []);
+
+    const renderHeader = useCallback(() => (
         <View>
-            {/* Recommended Section */}
             <View style={styles.sectionHeader}>
                 <View style={styles.recommendedBadge}>
                     <Text style={styles.recommendedText}>Recommended 👥</Text>
@@ -79,46 +79,44 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 contentContainerStyle={styles.recommendedList}
             />
 
-            {/* Categories */}
             <CategoryFilters
                 selectedCategory={selectedCategory}
                 onSelect={setSelectedCategory}
             />
         </View>
-    );
+    ), [selectedCategory]);
 
-    const renderPost = ({ item }: { item: any }) => {
-        // Map API data to PostCard props
-        return (
-            <PostCard
-                postId={item._id}
-                authorName={item.user?.name || 'User'}
-                authorAvatar={item.user?.emoji || 'https://i.pravatar.cc/150?u=' + item.user?._id}
-                timeAgo={new Date(item.createdAt).toLocaleDateString()} // Basic formatting
-                tag={item.post_type?.charAt(0).toUpperCase() + item.post_type?.slice(1)}
-                content={item.desc}
-                hashtags={item.tags || []}
-                postImages={item.image}
-                views={item.views || 0}
-                likes={item.total_likes || 0}
-                comments={item.total_comments || 0}
-                initialIsLiked={item.is_liked}
-                onCommentPress={() => handleCommentPress(item._id)}
-            />
-        );
-    };
-
-    const renderEmpty = () => {
+    const renderEmpty = useCallback(() => {
         if (loading) return null;
         return (
             <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>No posts found</Text>
             </View>
         );
-    };
+    }, [loading]);
+
+    const renderPost = useCallback(({ item }: { item: any }) => (
+        <PostCard
+            postId={item._id}
+            authorName={item.user?.name || 'User'}
+            authorAvatar={item.user?.emoji || 'https://i.pravatar.cc/150?u=' + item.user?._id}
+            timeAgo={new Date(item.createdAt).toLocaleDateString()}
+            tag={item.post_type?.charAt(0).toUpperCase() + item.post_type?.slice(1)}
+            content={item.desc}
+            hashtags={item.tags || []}
+            postImages={item.image}
+            views={item.views || 0}
+            likes={item.total_likes || 0}
+            comments={item.total_comments || 0}
+            initialIsLiked={item.is_liked}
+            onCommentPress={() => handleCommentPress(item._id)}
+        />
+    ), [handleCommentPress]);
+
+    const listFooter = useMemo(() => <View style={{ height: moderateScale(20) }} />, []);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView edges={['top']} style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
             <DashHeader
                 userName={user?.name || "User"}
@@ -129,7 +127,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
             <FlatList
                 data={filteredPosts}
-                keyExtractor={(item) => item._id}
+                keyExtractor={keyExtractor}
                 renderItem={renderPost}
                 ListHeaderComponent={renderHeader}
                 ListEmptyComponent={renderEmpty}
@@ -142,11 +140,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     />
                 }
                 contentContainerStyle={styles.listContent}
-                ListFooterComponent={<View style={{ height: moderateScale(20) }} />}
+                ListFooterComponent={listFooter}
                 initialNumToRender={5}
-                maxToRenderPerBatch={10}
+                maxToRenderPerBatch={5}
                 windowSize={5}
                 removeClippedSubviews={true}
+                updateCellsBatchingPeriod={50}
             />
         </SafeAreaView>
     );
@@ -158,7 +157,7 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.background,
     },
     listContent: {
-        // No flex: 1 here
+        backgroundColor: Colors.background,
     },
     sectionHeader: {
         paddingHorizontal: Theme.spacing.md,

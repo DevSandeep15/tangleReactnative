@@ -65,7 +65,6 @@ const styles = StyleSheet.create({
     backButton: {
         padding: moderateScale(5),
         alignSelf: 'flex-end',
-        marginTop: scale(25),
     },
     backIcon: {
         width: moderateScale(28),

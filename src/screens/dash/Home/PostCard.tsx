@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Dimensions } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
@@ -30,7 +30,7 @@ interface PostCardProps {
     onCommentPress?: () => void;
 }
 
-const PostCard: React.FC<PostCardProps> = ({
+const PostCard: React.FC<PostCardProps> = memo(({
     postId,
     authorName,
     authorAvatar,
@@ -47,33 +47,30 @@ const PostCard: React.FC<PostCardProps> = ({
     onCommentPress,
 }) => {
     const dispatch = useAppDispatch();
-    const [isLiked, setIsLiked] = React.useState(initialIsLiked);
-    const [likeCount, setLikeCount] = React.useState(initialLikes);
-    const [activeIndex, setActiveIndex] = React.useState(0);
-    const lastTap = React.useRef<number>(0);
+    const [isLiked, setIsLiked] = useState(initialIsLiked);
+    const [likeCount, setLikeCount] = useState(initialLikes);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const lastTap = useRef<number>(0);
 
-    // Sync state with props if they change externally (e.g. refresh or global update)
-    React.useEffect(() => {
+    // Sync state with props if they change externally
+    useEffect(() => {
         setLikeCount(initialLikes);
     }, [initialLikes]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         setIsLiked(initialIsLiked);
     }, [initialIsLiked]);
 
-    const images = postImages || (postImage ? [postImage] : []);
+    const images = useMemo(() => postImages || (postImage ? [postImage] : []), [postImages, postImage]);
 
-    const handleLike = () => {
-        // Optimistic update
+    const handleLike = useCallback(() => {
         const newIsLiked = !isLiked;
         setIsLiked(newIsLiked);
         setLikeCount(prev => newIsLiked ? prev + 1 : prev - 1);
-
-        // API Call
         dispatch(toggleLike(postId));
-    };
+    }, [isLiked, dispatch, postId]);
 
-    const handleImagePress = () => {
+    const handleImagePress = useCallback(() => {
         const now = Date.now();
         const DOUBLE_PRESS_DELAY = 300;
         if (lastTap.current && (now - lastTap.current) < DOUBLE_PRESS_DELAY) {
@@ -82,13 +79,21 @@ const PostCard: React.FC<PostCardProps> = ({
             }
         }
         lastTap.current = now;
-    };
+    }, [isLiked, handleLike]);
 
-    const handleScroll = (event: any) => {
+    const handleScroll = useCallback((event: any) => {
         const slideSize = event.nativeEvent.layoutMeasurement.width;
         const index = event.nativeEvent.contentOffset.x / slideSize;
         setActiveIndex(Math.round(index));
-    };
+    }, []);
+
+    const keyExtractor = useCallback((_: any, index: number) => index.toString(), []);
+
+    const getItemLayout = useCallback((_: any, index: number) => ({
+        length: IMAGE_WIDTH,
+        offset: IMAGE_WIDTH * index,
+        index,
+    }), []);
 
     return (
         <View style={styles.card}>
@@ -111,10 +116,10 @@ const PostCard: React.FC<PostCardProps> = ({
             </View>
 
             <View style={styles.body}>
-                <Text style={styles.content}>{content}</Text>
+                {/* <Text style={styles.content}>{content}</Text>
                 <Text style={styles.hashtags}>
                     {hashtags.map(item => `#${item} `)}
-                </Text>
+                </Text> */}
             </View>
 
             {images.length > 0 && (
@@ -125,7 +130,8 @@ const PostCard: React.FC<PostCardProps> = ({
                         pagingEnabled
                         showsHorizontalScrollIndicator={false}
                         onScroll={handleScroll}
-                        keyExtractor={(_, index) => index.toString()}
+                        keyExtractor={keyExtractor}
+                        getItemLayout={getItemLayout}
                         renderItem={({ item }) => (
                             <TouchableOpacity
                                 activeOpacity={0.9}
@@ -138,7 +144,7 @@ const PostCard: React.FC<PostCardProps> = ({
                                 />
                             </TouchableOpacity>
                         )}
-                        scrollEventThrottle={16}
+                        scrollEventThrottle={32}
                     />
 
                     {images.length > 1 && (
@@ -173,7 +179,7 @@ const PostCard: React.FC<PostCardProps> = ({
             </View>
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     card: {

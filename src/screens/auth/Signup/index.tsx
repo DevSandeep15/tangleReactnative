@@ -3,7 +3,6 @@ import {
     View,
     Text,
     StyleSheet,
-    SafeAreaView,
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
@@ -23,6 +22,7 @@ import { TextField } from '../../../components/TextField/TextField';
 import { AuthButton } from '../../../components/Button/AuthButton';
 import { sendSignupOtp, clearError } from '../../../store/slices/authSlice';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'Signup'>;
 

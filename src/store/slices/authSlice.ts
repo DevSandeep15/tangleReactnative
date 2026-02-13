@@ -86,11 +86,25 @@ export const getAvatars = createAsyncThunk<any, void>(
     async (_, { rejectWithValue }) => {
         try {
             const response = await getRequest<any>(URLS.AUTH.GET_AVATARS);
-            // getRequest returns response.data already.
             return response.data || response;
         } catch (error: any) {
             console.log('--- Avatars Thunk Error ---', error.response?.data || error.message);
             return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch avatars');
+        }
+    }
+);
+
+export const getProfile = createAsyncThunk<any, void>(
+    'auth/getProfile',
+    async (_, { rejectWithValue }) => {
+        try {
+            console.log('--- Get Profile Thunk Request ---');
+            const response = await getRequest<any>(URLS.AUTH.GET_PROFILE);
+            console.log('--- Get Profile Thunk Success ---', response);
+            return response;
+        } catch (error: any) {
+            console.log('--- Get Profile Thunk Error ---', error.response?.data || error.message);
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch profile');
         }
     }
 );
@@ -130,14 +144,12 @@ const authSlice = createSlice({
             .addCase(login.fulfilled, (state, action) => {
                 state.loading = false;
                 const data = action.payload.data || action.payload;
-                console.log('--- Login Reducer Data ---', data);
-                if (data.token) {
-                    state.token = data.token;
-                    state.user = data.user || action.payload.user || action.meta.arg;
+
+                if (data.token || action.payload.token) {
+                    state.token = data.token || action.payload.token;
+                    state.user = data.user || action.payload.user || (data._id ? data : null);
                     state.isAuthenticated = true;
-                    console.log('--- Auth State Updated: isAuthenticated = true ---');
-                } else {
-                    console.log('--- Auth State NOT Updated: No token found ---');
+                    console.log('--- Login Success: State Updated ---');
                 }
             })
             .addCase(login.rejected, (state, action) => {
@@ -176,10 +188,12 @@ const authSlice = createSlice({
             .addCase(registerUser.fulfilled, (state, action) => {
                 state.loading = false;
                 const data = action.payload.data || action.payload;
-                if (data.token) {
-                    state.token = data.token;
-                    state.user = data.user || action.payload.user || action.meta.arg;
+
+                if (data.token || action.payload.token) {
+                    state.token = data.token || action.payload.token;
+                    state.user = data.user || action.payload.user || (data._id ? data : action.meta.arg);
                     state.isAuthenticated = true;
+                    console.log('--- Registration Success: State Updated ---');
                 }
             })
             .addCase(registerUser.rejected, (state, action) => {
@@ -196,6 +210,23 @@ const authSlice = createSlice({
                 state.avatars = action.payload;
             })
             .addCase(getAvatars.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            // Get Profile
+            .addCase(getProfile.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getProfile.fulfilled, (state, action) => {
+                state.loading = false;
+                const data = action.payload.data || action.payload;
+                if (data.user || data._id) {
+                    state.user = data.user || data;
+                    console.log('--- Profile Updated in State ---');
+                }
+            })
+            .addCase(getProfile.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });

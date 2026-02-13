@@ -4,7 +4,6 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
-    SafeAreaView,
     StatusBar,
     StyleSheet,
     Text,
@@ -12,7 +11,7 @@ import {
     TouchableWithoutFeedback,
     View
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { moderateScale, verticalScale } from 'react-native-size-matters';
 import Toast from 'react-native-toast-message';
 import { AuthHeader } from '../../../components/authHeader/AuthHeader';
@@ -51,7 +50,9 @@ const EmailLoginScreen: React.FC<Props> = ({ navigation }) => {
         const resultAction = await dispatch(login(loginData));
 
         if (login.fulfilled.match(resultAction)) {
+
             const result = resultAction.payload;
+            console.log('result', result)
             if (result.success || result.token) {
                 Toast.show({
                     type: 'success',
