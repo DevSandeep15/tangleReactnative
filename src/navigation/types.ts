@@ -8,7 +8,7 @@ export type RootTabParamList = {
     Services: undefined;
     Add: undefined;
     Hub: undefined;
-    Profile: undefined;
+    Profile: { userId?: string };
 };
 
 // Define the param list for auth stack
@@ -100,7 +100,7 @@ export type RootStackParamList = {
     MainTabs: NavigatorScreenParams<RootTabParamList>;
     Notifications: undefined;
     Inbox: undefined;
-    ChatDetail: { name: string; avatar: any };
+    ChatDetail: { name: string; avatar: any; roomId?: string; receiverId?: string };
 };
 
 export type WelcomeScreenProps = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;

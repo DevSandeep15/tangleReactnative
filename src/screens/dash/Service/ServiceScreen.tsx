@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import type { ServicesScreenProps } from '../../../navigation/types';
 import Header from '../../../components/commonHeader/Header';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ServiceScreen: React.FC<ServicesScreenProps> = ({ navigation }) => {
     return (

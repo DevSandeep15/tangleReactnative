@@ -4,7 +4,6 @@ import {
     Text,
     StyleSheet,
     ScrollView,
-    SafeAreaView,
     TouchableOpacity,
     Dimensions,
     Image,
@@ -19,6 +18,7 @@ import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
 import type { HubScreenProps } from '../../../navigation/types';
 import Header from '../../../components/commonHeader/Header';
 import { IMAGES } from '../../../constants/images';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 

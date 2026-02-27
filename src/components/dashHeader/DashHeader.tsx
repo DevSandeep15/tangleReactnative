@@ -4,6 +4,7 @@ import { Colors } from '../../constants/colors';
 import { Theme } from '../../constants/theme';
 import { moderateScale } from 'react-native-size-matters';
 import { ICONS } from '../../constants/icons';
+import { getRandomAvatarColor } from '../../utils/colorUtils';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface DashHeaderProps {
@@ -22,9 +23,10 @@ const DashHeader: React.FC<DashHeaderProps> = ({
     const insets = useSafeAreaInsets();
 
     const renderAvatar = () => {
+        const avatarBgColor = getRandomAvatarColor(userName);
         if (!userAvatar) {
             return (
-                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center' }]}>
+                <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center', backgroundColor: avatarBgColor }]}>
                     <Image source={ICONS.profileTab} style={[styles.icon, { tintColor: Colors.textSecondary }]} />
                 </View>
             );
@@ -35,8 +37,8 @@ const DashHeader: React.FC<DashHeaderProps> = ({
         return (
             <Image
                 source={source}
-                style={styles.avatar}
-                resizeMode="cover"
+                style={[styles.avatar, { backgroundColor: avatarBgColor }]}
+                resizeMode="contain"
             />
         );
     };
@@ -84,7 +86,6 @@ const styles = StyleSheet.create({
         width: moderateScale(40),
         height: moderateScale(40),
         borderRadius: moderateScale(25),
-        backgroundColor: Colors.lightPink, // Default background if image fails
     },
     textContainer: {
         marginLeft: Theme.spacing.sm,

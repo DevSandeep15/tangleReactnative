@@ -5,6 +5,8 @@ import { Theme } from '../../../constants/theme';
 import { moderateScale } from 'react-native-size-matters';
 import { ICONS } from '../../../constants/icons';
 
+import { getRandomAvatarColor } from '../../../utils/colorUtils';
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MARGIN = Theme.spacing.md;
 const CARD_PADDING = Theme.spacing.md;
@@ -16,6 +18,7 @@ import { toggleLike } from '../../../store/slices/postSlice';
 interface PostCardProps {
     postId: string;
     authorName: string;
+    authorId?: string;
     authorAvatar: string;
     timeAgo: string;
     tag: string;
@@ -28,11 +31,13 @@ interface PostCardProps {
     comments: number;
     initialIsLiked?: boolean;
     onCommentPress?: () => void;
+    onProfilePress?: () => void;
 }
 
 const PostCard: React.FC<PostCardProps> = memo(({
     postId,
     authorName,
+    authorId,
     authorAvatar,
     timeAgo,
     tag,
@@ -45,6 +50,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
     comments: initialCommentsCount,
     initialIsLiked = false,
     onCommentPress,
+    onProfilePress,
 }) => {
     const dispatch = useAppDispatch();
     const [isLiked, setIsLiked] = useState(initialIsLiked);
@@ -98,13 +104,17 @@ const PostCard: React.FC<PostCardProps> = memo(({
     return (
         <View style={styles.card}>
             <View style={styles.header}>
-                <View style={styles.authorInfo}>
-                    <Image source={{ uri: authorAvatar }} style={styles.avatar} />
+                <TouchableOpacity style={styles.authorInfo} onPress={onProfilePress} activeOpacity={0.7}>
+                    <Image
+                        source={{ uri: authorAvatar }}
+                        style={[styles.avatar, { backgroundColor: getRandomAvatarColor(authorId) }]}
+                        resizeMode="contain"
+                    />
                     <View>
                         <Text style={styles.authorName}>{authorName}</Text>
                         <Text style={styles.timeAgo}>{timeAgo}</Text>
                     </View>
-                </View>
+                </TouchableOpacity>
                 <View style={styles.headerRight}>
                     <View style={styles.tagBadge}>
                         <Text style={styles.tagText}>{tag}</Text>

@@ -21,25 +21,34 @@ import { moderateScale } from 'react-native-size-matters';
 import { IMAGES } from '../../../constants/images';
 import { getPosts } from '../../../store/slices/postSlice';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getRecommendedUsers } from '../../../store/slices/authSlice';
+import { createChatroom } from '../../../store/slices/chatSlice';
+import socketService from '../../../services/socketService';
+import Toast from 'react-native-toast-message';
 
-const RECOMMENDED_DATA = [
-    { id: '1', name: 'Suresh', role: 'Science Teacher', image: IMAGES.dummyAvatar },
-    { id: '2', name: 'Apoorva', role: 'Dance Teacher', image: IMAGES.dummyAvatar },
-    { id: '3', name: 'Joshep', role: 'Software Engineer', image: IMAGES.dummyAvatar },
-];
+// Recommended users will be fetched from Redux state
+
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const dispatch = useAppDispatch();
     const [selectedCategory, setSelectedCategory] = React.useState('All');
-    const { user } = useAppSelector(state => state.auth);
-    const { posts, loading } = useAppSelector(state => state.post);
+    const { user, recommendedUsers } = useAppSelector(state => state.auth);
+    const { posts, loading, } = useAppSelector(state => state.post);
 
     useEffect(() => {
+        dispatch(getRecommendedUsers())
         dispatch(getPosts());
     }, [dispatch]);
 
+    useEffect(() => {
+        if (recommendedUsers?.length > 0) {
+            console.log('--- Recommended Users at Home ---', recommendedUsers);
+        }
+    }, [recommendedUsers]);
+
     const onRefresh = useCallback(() => {
         dispatch(getPosts());
+        dispatch(getRecommendedUsers());
     }, [dispatch]);
 
     const filteredPosts = useMemo(() => {
@@ -54,30 +63,95 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         DeviceEventEmitter.emit('OPEN_COMMENTS', { postId });
     }, []);
 
+    const handleCreateChatroom = useCallback(async (targetUserId: string, name: string, avatar: string) => {
+        try {
+            console.log('--- Creating Chatroom with UserID:', targetUserId);
+            const resultAction = await dispatch(createChatroom(targetUserId));
+
+            if (createChatroom.fulfilled.match(resultAction)) {
+                // response structure is resultAction.payload
+                // roomId is in resultAction.payload.data._id
+                const chatData = resultAction.payload?.data;
+                const roomId = chatData?._id;
+                const currentUserId = user?._id;
+
+                if (roomId && currentUserId) {
+                    console.log('--- Joining Room via Socket ---', { roomId, userId: currentUserId });
+
+                    // Emit joinRoom
+                    socketService.emit('joinRoom', { roomId, userId: currentUserId });
+
+                    // Listen for status event
+                    const onStatusUpdate = (status: any) => {
+                        console.log('--- Socket Status Received ---', status);
+                        // Cleanup listener
+                        socketService.off('status', onStatusUpdate);
+
+                        // Navigate to ChatDetail
+                        navigation.navigate('ChatDetail', {
+                            name: name,
+                            avatar: avatar,
+                            roomId: roomId,
+                            receiverId: targetUserId
+                        });
+                    };
+
+                    socketService.on('status', onStatusUpdate);
+
+                    // Add a failsafe timeout just in case socket status never comes
+                    setTimeout(() => {
+                        socketService.off('status', onStatusUpdate);
+                    }, 5000);
+
+                } else {
+                    console.warn('--- RoomID or UserID missing ---', { roomId, currentUserId });
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: 'Failed to initialize chat connection'
+                    });
+                }
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: resultAction.payload as string || 'Failed to create chatroom'
+                });
+            }
+        } catch (error) {
+            console.error('--- Unexpected Error in handleCreateChatroom ---', error);
+        }
+    }, [dispatch, navigation, user, createChatroom]);
+
     const keyExtractor = useCallback((item: any) => item._id, []);
 
     const renderHeader = useCallback(() => (
         <View>
-            <View style={styles.sectionHeader}>
+            {/* <View style={styles.sectionHeader}>
                 <View style={styles.recommendedBadge}>
                     <Text style={styles.recommendedText}>Recommended 👥</Text>
                 </View>
             </View>
 
             <FlatList
-                data={RECOMMENDED_DATA}
+                data={recommendedUsers}
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item) => item._id}
                 renderItem={({ item }) => (
                     <RecommendedCard
                         name={item.name}
-                        role={item.role}
-                        image={item.image}
+                        role={item.preferred_interest?.join(', ') || 'Community Member'}
+                        image={item.emoji || IMAGES.dummyAvatar}
+                        onChatPress={() => handleCreateChatroom(item._id, item.name, item.emoji || IMAGES.dummyAvatar)}
+                        onPress={() => navigation.navigate('Profile', { userId: item._id })}
                     />
                 )}
                 contentContainerStyle={styles.recommendedList}
-            />
+                initialNumToRender={5}
+                maxToRenderPerBatch={5}
+                windowSize={3}
+            /> */}
 
             <CategoryFilters
                 selectedCategory={selectedCategory}
@@ -99,6 +173,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <PostCard
             postId={item._id}
             authorName={item.user?.name || 'User'}
+            authorId={item.user?._id}
             authorAvatar={item.user?.emoji || 'https://i.pravatar.cc/150?u=' + item.user?._id}
             timeAgo={new Date(item.createdAt).toLocaleDateString()}
             tag={item.post_type?.charAt(0).toUpperCase() + item.post_type?.slice(1)}
@@ -110,8 +185,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             comments={item.total_comments || 0}
             initialIsLiked={item.is_liked}
             onCommentPress={() => handleCommentPress(item._id)}
+            onProfilePress={() => navigation.navigate('Profile', { userId: item.user?._id })}
         />
-    ), [handleCommentPress]);
+    ), [handleCommentPress, navigation, user]);
 
     const listFooter = useMemo(() => <View style={{ height: moderateScale(20) }} />, []);
 

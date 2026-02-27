@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, SafeAreaView, StatusBar, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, StatusBar, RefreshControl, ActivityIndicator } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import { moderateScale, verticalScale, scale } from 'react-native-size-matters';
@@ -8,7 +8,12 @@ import Header from '../../../components/commonHeader/Header';
 import { ICONS } from '../../../constants/icons';
 import { IMAGES } from '../../../constants/images';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
-import { logout, getProfile } from '../../../store/slices/authSlice';
+import { logout, getProfile, getOtherProfile, clearOtherUser } from '../../../store/slices/authSlice';
+import { createChatroom } from '../../../store/slices/chatSlice';
+import socketService from '../../../services/socketService';
+import Toast from 'react-native-toast-message';
+import { getRandomAvatarColor } from '../../../utils/colorUtils';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const INTERESTS = [
     { id: '1', label: 'Sports', icon: '🎾', color: Colors.skyBlue },
@@ -45,28 +50,91 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, backgroundColor
     </TouchableOpacity>
 );
 
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
     const dispatch = useAppDispatch();
-    const { user, loading } = useAppSelector(state => state.auth);
+    const { user, otherUser, loading } = useAppSelector(state => state.auth);
     const [refreshing, setRefreshing] = useState(false);
+    const userId = route.params?.userId;
+    const isOwnProfile = !userId || userId === user?._id;
+    const displayedUser = isOwnProfile ? user : otherUser;
 
     const fetchProfileData = useCallback(async () => {
         try {
-            await dispatch(getProfile()).unwrap();
+            if (isOwnProfile) {
+                await dispatch(getProfile()).unwrap();
+            } else if (userId) {
+                await dispatch(getOtherProfile(userId)).unwrap();
+            }
         } catch (error) {
             console.error('Failed to fetch profile:', error);
         }
-    }, [dispatch]);
+    }, [dispatch, isOwnProfile, userId]);
 
     useEffect(() => {
         fetchProfileData();
-    }, [fetchProfileData]);
+        return () => {
+            if (!isOwnProfile) {
+                dispatch(clearOtherUser());
+            }
+        };
+    }, [fetchProfileData, isOwnProfile, dispatch]);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         await fetchProfileData();
         setRefreshing(false);
     }, [fetchProfileData]);
+
+    const handleChatPress = useCallback(async () => {
+        if (!displayedUser || isOwnProfile) return;
+
+        try {
+            console.log('--- Creating Chatroom with UserID:', displayedUser._id);
+            const resultAction = await dispatch(createChatroom(displayedUser._id));
+
+            if (createChatroom.fulfilled.match(resultAction)) {
+                const chatData = resultAction.payload?.data;
+                const roomId = chatData?._id;
+                const currentUserId = user?._id;
+
+                if (roomId && currentUserId) {
+                    console.log('--- Joining Room via Socket ---', { roomId, userId: currentUserId });
+                    socketService.emit('joinRoom', { roomId, userId: currentUserId });
+
+                    const onStatusUpdate = (status: any) => {
+                        console.log('--- Socket Status Received ---', status);
+                        socketService.off('status', onStatusUpdate);
+                        navigation.navigate('ChatDetail', {
+                            name: displayedUser.name,
+                            avatar: displayedUser.emoji || IMAGES.dummyAvatar,
+                            roomId: roomId,
+                            receiverId: displayedUser._id
+                        });
+                    };
+
+                    socketService.on('status', onStatusUpdate);
+                    setTimeout(() => {
+                        socketService.off('status', onStatusUpdate);
+                    }, 5000);
+
+                } else {
+                    Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: 'Failed to initialize chat connection'
+                    });
+                }
+            } else {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: resultAction.payload as string || 'Failed to create chatroom'
+                });
+            }
+        } catch (error) {
+            console.error('--- Unexpected Error in handleChatPress ---', error);
+        }
+    }, [dispatch, navigation, user, displayedUser, isOwnProfile]);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -103,7 +171,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
-            <Header title="My Profile" />
+            <Header title={isOwnProfile ? "My Profile" : `${displayedUser?.name || 'User'}`} onBackPress={!isOwnProfile ? () => navigation.goBack() : undefined} showBack={!isOwnProfile} />
 
             <ScrollView
                 style={styles.container}
@@ -117,32 +185,40 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                     />
                 }
             >
-                {loading && !refreshing && (
-                    <View style={styles.loaderContainer}>
-                        <ActivityIndicator color={Colors.primary} />
-                    </View>
-                )}
                 {/* Profile Card */}
                 <View style={styles.profileCard}>
                     <View style={styles.avatarContainer}>
-                        {user?.emoji ? (
-                            <Image source={{ uri: user.emoji }} style={styles.avatar} resizeMode="cover" />
+                        {displayedUser?.emoji ? (
+                            <Image
+                                source={{ uri: displayedUser.emoji }}
+                                style={[styles.avatar, { backgroundColor: getRandomAvatarColor(displayedUser._id) }]}
+                                resizeMode="contain"
+                            />
                         ) : (
-                            <View style={[styles.avatar, { backgroundColor: Colors.lightPink, justifyContent: 'center', alignItems: 'center' }]}>
+                            <View style={[styles.avatar, { backgroundColor: getRandomAvatarColor(displayedUser?._id), justifyContent: 'center', alignItems: 'center' }]}>
                                 <Image source={ICONS.profileTab} style={{ width: moderateScale(40), height: moderateScale(40), tintColor: Colors.textSecondary }} />
                             </View>
                         )}
+                        {!isOwnProfile && (
+                            <TouchableOpacity
+                                style={styles.chatIconBadge}
+                                onPress={handleChatPress}
+                                activeOpacity={0.8}
+                            >
+                                <Image source={ICONS.messageBlack} style={{ width: moderateScale(16), height: moderateScale(16) }} resizeMode="contain" />
+                            </TouchableOpacity>
+                        )}
                     </View>
-                    <Text style={styles.userName}>{user?.name || 'User'}</Text>
+                    <Text style={styles.userName}>{displayedUser?.name || 'User'}</Text>
 
                     <View style={styles.infoRow}>
                         <Image source={ICONS.location} style={styles.infoIcon} resizeMode="contain" />
-                        <Text style={styles.infoText}>{user?.society_name || 'Society Not Set'}</Text>
+                        <Text style={styles.infoText}>{displayedUser?.society_name || 'Society Not Set'}</Text>
                     </View>
 
                     <View style={styles.infoRow}>
                         <Image source={ICONS.location} style={styles.infoIcon} resizeMode="contain" />
-                        <Text style={styles.infoText}>Flat {user?.flat_number || 'N/A'}</Text>
+                        <Text style={styles.infoText}>Flat {displayedUser?.flat_number || 'N/A'}</Text>
                     </View>
                 </View>
 
@@ -150,32 +226,31 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 <View style={styles.statsRow}>
                     <StatCard
                         label="Posts"
-                        value={user?.total_posts?.toString() || "0"}
+                        value={displayedUser?.total_posts?.toString() || "0"}
                         icon={ICONS.book}
                         backgroundColor="#D1E4FF"
                         onPress={() => console.log('Posts pressed')}
                     />
                     <StatCard
                         label="Connections"
-                        value={user?.total_connections?.toString() || "0"}
+                        value={displayedUser?.total_connections?.toString() || "0"}
                         icon={ICONS.handShake}
                         backgroundColor="#FFD1D1"
                         onPress={() => console.log('Connections pressed')}
                     />
                     <StatCard
                         label="Circles"
-                        value={user?.total_circles?.toString() || "0"}
+                        value={displayedUser?.total_circles?.toString() || "0"}
                         icon={ICONS.star}
                         backgroundColor={Colors.darkgreen}
                         onPress={() => console.log('Circles pressed')}
                     />
                 </View>
 
-                {/* My Interests Area */}
-                <Text style={styles.sectionTitle}>My Interests</Text>
+                <Text style={styles.sectionTitle}>{isOwnProfile ? "My Interests" : "Interests"}</Text>
                 <View style={styles.interestsContainer}>
-                    {user?.preferred_interest?.length > 0 ? (
-                        user.preferred_interest.map((interest: string, index: number) => (
+                    {displayedUser?.preferred_interest?.length > 0 ? (
+                        displayedUser.preferred_interest.map((interest: string, index: number) => (
                             <View key={index} style={[styles.interestPill, { backgroundColor: Colors.skyBlue }]}>
                                 <Text style={styles.interestText}>{interest}</Text>
                             </View>
@@ -190,44 +265,54 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                 </View>
 
                 {/* Settings Section */}
-                <Text style={styles.sectionTitle}>Settings</Text>
-                <View style={styles.settingsGroup}>
-                    {SETTINGS_OPTIONS.map((option) => (
-                        <TouchableOpacity
-                            key={option.id}
-                            style={[
-                                styles.settingItem,
-                                option.isDestructive && styles.destructiveSettingItem
-                            ]}
-                            onPress={option.onPress}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.settingLeft}>
-                                <Image
-                                    source={option.icon}
+                {isOwnProfile && (
+                    <>
+                        <Text style={styles.sectionTitle}>Settings</Text>
+                        <View style={styles.settingsGroup}>
+                            {SETTINGS_OPTIONS.map((option) => (
+                                <TouchableOpacity
+                                    key={option.id}
                                     style={[
-                                        styles.settingIconImage,
-                                        option.isDestructive && styles.destructiveIcon
+                                        styles.settingItem,
+                                        option.isDestructive && styles.destructiveSettingItem
                                     ]}
-                                    resizeMode="contain"
-                                />
-                                <Text
-                                    style={[
-                                        styles.settingLabel,
-                                        option.isDestructive && styles.destructiveLabel
-                                    ]}
+                                    onPress={option.onPress}
+                                    activeOpacity={0.7}
                                 >
-                                    {option.label}
-                                </Text>
-                            </View>
-                            {!option.isDestructive && <Text style={styles.chevron}>›</Text>}
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                                    <View style={styles.settingLeft}>
+                                        <Image
+                                            source={option.icon}
+                                            style={[
+                                                styles.settingIconImage,
+                                                option.isDestructive && styles.destructiveIcon
+                                            ]}
+                                            resizeMode="contain"
+                                        />
+                                        <Text
+                                            style={[
+                                                styles.settingLabel,
+                                                option.isDestructive && styles.destructiveLabel
+                                            ]}
+                                        >
+                                            {option.label}
+                                        </Text>
+                                    </View>
+                                    {!option.isDestructive && <Text style={styles.chevron}>›</Text>}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </>
+                )}
 
                 {/* Bottom Padding */}
                 <View style={{ height: verticalScale(20) }} />
             </ScrollView>
+
+            {loading && !refreshing && (
+                <View style={styles.loaderOverlay}>
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                </View>
+            )}
         </SafeAreaView>
     );
 };
@@ -245,9 +330,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: Theme.spacing.md,
         paddingBottom: Theme.spacing.xl,
     },
-    loaderContainer: {
-        paddingVertical: Theme.spacing.md,
+    loaderOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+        justifyContent: 'center',
         alignItems: 'center',
+        zIndex: 10,
     },
     profileCard: {
         backgroundColor: Colors.white,
@@ -266,6 +354,20 @@ const styles = StyleSheet.create({
         width: moderateScale(70),
         height: moderateScale(70),
         borderRadius: moderateScale(50),
+    },
+    chatIconBadge: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: Colors.white,
+        width: moderateScale(30),
+        height: moderateScale(30),
+        borderRadius: moderateScale(15),
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Colors.border,
+        ...Theme.shadow.sm,
     },
     userName: {
         fontSize: moderateScale(20),

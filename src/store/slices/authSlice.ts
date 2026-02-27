@@ -9,6 +9,8 @@ interface AuthState {
     loading: boolean;
     error: string | null;
     avatars: any[];
+    recommendedUsers: any[];
+    otherUser: any | null;
 }
 
 const initialState: AuthState = {
@@ -18,6 +20,8 @@ const initialState: AuthState = {
     loading: false,
     error: null,
     avatars: [],
+    recommendedUsers: [],
+    otherUser: null,
 };
 
 // Async Thunks
@@ -109,6 +113,35 @@ export const getProfile = createAsyncThunk<any, void>(
     }
 );
 
+export const getRecommendedUsers = createAsyncThunk<any, void>(
+    'auth/getRecommendedUsers',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await getRequest<any>(URLS.AUTH.GET_RECOMMENDED_USERS);
+            console.log('--- Get Recommended Users Thunk Success ---', response);
+            return response.data.users;
+        } catch (error: any) {
+            console.log('--- Recommended Users Thunk Error ---', error.response?.data || error.message);
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch recommended users');
+        }
+    }
+);
+
+export const getOtherProfile = createAsyncThunk<any, string>(
+    'auth/getOtherProfile',
+    async (userId: string, { rejectWithValue }) => {
+        try {
+            console.log('--- Get Other Profile Thunk Request ---', userId);
+            const response = await getRequest<any>(`${URLS.AUTH.GET_OTHER_PROFILE}?user_id=${userId}`);
+            console.log('--- Get Other Profile Thunk Success ---', response);
+            return response;
+        } catch (error: any) {
+            console.log('--- Get Other Profile Thunk Error ---', error.response?.data || error.message);
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch other profile');
+        }
+    }
+);
+
 const authSlice = createSlice({
     name: 'auth',
     initialState,
@@ -129,6 +162,9 @@ const authSlice = createSlice({
         },
         updateUser: (state, action: PayloadAction<any>) => {
             state.user = action.payload;
+        },
+        clearOtherUser: (state) => {
+            state.otherUser = null;
         },
         clearError: (state) => {
             state.error = null;
@@ -229,9 +265,39 @@ const authSlice = createSlice({
             .addCase(getProfile.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
+            })
+            // Get Recommended Users
+            .addCase(getRecommendedUsers.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getRecommendedUsers.fulfilled, (state, action) => {
+                state.loading = false;
+                state.recommendedUsers = action.payload;
+            })
+            .addCase(getRecommendedUsers.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            // Get Other Profile
+            .addCase(getOtherProfile.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(getOtherProfile.fulfilled, (state, action) => {
+                state.loading = false;
+                const data = action.payload.data || action.payload;
+                if (data.user || data._id) {
+                    state.otherUser = data.user || data;
+                    console.log('--- Other Profile Updated in State ---');
+                }
+            })
+            .addCase(getOtherProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
             });
     },
 });
 
-export const { setCredentials, logout, updateUser, clearError } = authSlice.actions;
+export const { setCredentials, logout, updateUser, clearError, clearOtherUser } = authSlice.actions;
 export default authSlice.reducer;

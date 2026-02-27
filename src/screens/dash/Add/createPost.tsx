@@ -352,7 +352,7 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                             )}
                         </BottomSheetScrollView>
 
-                        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Theme.spacing.lg) }]}>
+                        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 10, Theme.spacing.lg) }]}>
                             <TouchableOpacity
                                 style={styles.cancelButton}
                                 onPress={handleClose}

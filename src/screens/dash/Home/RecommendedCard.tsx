@@ -4,32 +4,40 @@ import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import { moderateScale } from 'react-native-size-matters';
 import { ICONS } from '../../../constants/icons';
+import { getRandomAvatarColor } from '../../../utils/colorUtils';
 
 interface RecommendedCardProps {
     name: string;
     role: string;
     image: any;
+    onChatPress?: () => void;
+    onAddPress?: () => void;
+    onPress?: () => void;
 }
 
-const RecommendedCard: React.FC<RecommendedCardProps> = ({ name, role, image }) => {
+const RecommendedCard: React.FC<RecommendedCardProps> = ({ name, role, image, onChatPress, onAddPress, onPress }) => {
     return (
-        <View style={styles.card}>
-            <View style={styles.imageContainer}>
-                <Image source={typeof image === 'string' ? { uri: image } : image} style={styles.image} />
+        <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+            <View style={[styles.imageContainer, { backgroundColor: getRandomAvatarColor(name) }]}>
+                <Image
+                    source={typeof image === 'string' ? { uri: image } : image}
+                    style={styles.image}
+                    resizeMode="contain"
+                />
             </View>
             <View style={styles.content}>
                 <Text style={styles.name} numberOfLines={1}>{name}</Text>
                 <Text style={styles.role} numberOfLines={1}>{role}</Text>
                 <View style={styles.actionRow}>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={(e) => { e.stopPropagation(); onAddPress?.(); }}>
                         <Image source={ICONS.addFriend} style={styles.actionIcon} />
                     </TouchableOpacity>
-                    <TouchableOpacity>
+                    <TouchableOpacity onPress={(e) => { e.stopPropagation(); onChatPress?.(); }}>
                         <Image source={ICONS.messageBlack} style={styles.actionIcon} />
                     </TouchableOpacity>
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
@@ -46,14 +54,12 @@ const styles = StyleSheet.create({
     imageContainer: {
         width: '100%',
         height: moderateScale(90),
-        backgroundColor: '#FFE5E5',
         borderRadius: Theme.borderRadius.lg,
         overflow: 'hidden',
     },
     image: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
     },
     content: {
         padding: Theme.spacing.xs,

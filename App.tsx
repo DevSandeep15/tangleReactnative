@@ -8,6 +8,8 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { Colors } from './src/constants/colors';
 import { NavigationContainer } from '@react-navigation/native';
 import { store, persistor } from './src/store/store';
+import SocketInitializer from './src/services/SocketInitializer';
+import Toast from 'react-native-toast-message';
 
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
@@ -15,6 +17,7 @@ function App(): React.JSX.Element {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
+        <SocketInitializer />
         <GestureHandlerRootView style={{ flex: 1 }}>
           <SafeAreaProvider>
             <NavigationContainer>
@@ -26,6 +29,7 @@ function App(): React.JSX.Element {
             </NavigationContainer>
           </SafeAreaProvider>
         </GestureHandlerRootView>
+        <Toast />
       </PersistGate>
     </Provider>
   );

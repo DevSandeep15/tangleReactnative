@@ -10,6 +10,15 @@ export const URLS = {
         COMPLETE_SIGNUP: `${BASE_URL}/api/user/register`,
         GET_AVATARS: `${BASE_URL}/api/user/get-emojis`,
         GET_PROFILE: `${BASE_URL}/api/user/get-profile`,
+        GET_RECOMMENDED_USERS: `${BASE_URL}/api/user/sameinterest-users`,
+        GET_OTHER_PROFILE: `${BASE_URL}/api/user/get-profile-user`,
+    },
+    CHAT: {
+        CREATE_CHATROOM: `${BASE_URL}/api/user/create-chatroom`,
+        GET_CHATLIST: `${BASE_URL}/api/user/get-chatlist`,
+        GET_MESSAGES: `${BASE_URL}/api/user/get-messages`,
+        DELETE_MESSAGE: `${BASE_URL}/api/user/delete-message`,
+        CLEAR_CHAT: `${BASE_URL}/api/user/clear-chat`,
     },
     POST: {
         ADD_POST: `${BASE_URL}/api/user/add-post`,

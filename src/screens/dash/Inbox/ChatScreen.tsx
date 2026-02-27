@@ -26,39 +26,66 @@ interface Message {
     sender: 'me' | 'other';
 }
 
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { getMessages, clearMessages, addReceivedMessage, deleteMessage, deleteMessageFromState, clearChat } from '../../../store/slices/chatSlice';
+import socketService from '../../../services/socketService';
+import { ActivityIndicator, Modal, Pressable, Alert } from 'react-native';
+
 const ChatScreen: React.FC<ChatDetailScreenProps> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
-    const { name, avatar } = route.params;
+    const dispatch = useAppDispatch();
+    const { name, avatar, roomId, receiverId } = route.params;
+    const { currentMessages, loading } = useAppSelector(state => state.chat);
+    const { user } = useAppSelector(state => state.auth);
 
-    const [message, setMessage] = useState('');
+    const [messageText, setMessageText] = useState('');
     const [keyboardHeight, setKeyboardHeight] = useState(0);
-    const [messages, setMessages] = useState<Message[]>([
-        { id: '1', text: 'from the community event', time: '10:32 AM', sender: 'me' },
-        { id: '2', text: 'Oh nice! How was it?', time: '10:33 AM', sender: 'other' },
-        { id: '3', text: 'It was amazing! Met so many neighbors. We should definitely organize more events like this 🎉', time: '10:35 AM', sender: 'me' },
-        { id: '4', text: 'Absolutely! I was thinking about organizing a badminton tournament next month', time: '10:36 AM', sender: 'other' },
-        { id: '5', text: 'That sounds perfect! Count me in 🏸', time: '10:37 AM', sender: 'me' },
-        { id: '6', text: 'Great! Also, do you have the contact for that plumber you mentioned?', time: '10:38 AM', sender: 'other' },
-        { id: '7', text: "Yes! Let me share it with you. His name is Vijay and he's excellent", time: '10:40 AM', sender: 'me' },
-    ]);
+    const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    const flatListRef = useRef<FlatList<Message>>(null);
+    // Initial fetch and Socket Join
+    useEffect(() => {
+        if (roomId && user?._id) {
+            dispatch(getMessages(roomId));
+            console.log('--- Joining Chatroom via Socket ---', { roomId, userId: user._id });
+            socketService.emit('joinRoom', { roomId, userId: user._id });
+        }
+        return () => {
+            dispatch(clearMessages());
+        };
+    }, [dispatch, roomId, user?._id]);
+
+    // Socket listeners for real-time messages
+    useEffect(() => {
+        const onNewMessage = (response: any) => {
+            const msgData = response.data || response;
+            const incomingRoomId = msgData?.roomId?.toString().trim();
+            const currentRoomId = roomId?.toString().trim();
+
+            if (incomingRoomId === currentRoomId) {
+                dispatch(addReceivedMessage(msgData));
+            }
+        };
+
+        socketService.on('newMessage', onNewMessage);
+        return () => {
+            socketService.off('newMessage', onNewMessage);
+        };
+    }, [roomId, dispatch]);
+
+    const flatListRef = useRef<FlatList<any>>(null);
     const inputRef = useRef<TextInput>(null);
 
     // Handle keyboard show/hide for Android
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
             Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-            (e: any) => {
-                setKeyboardHeight(e.endCoordinates.height);
-            }
+            (e: any) => setKeyboardHeight(e.endCoordinates.height)
         );
 
         const keyboardDidHideListener = Keyboard.addListener(
             Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-            () => {
-                setKeyboardHeight(0);
-            }
+            () => setKeyboardHeight(0)
         );
 
         return () => {
@@ -67,46 +94,106 @@ const ChatScreen: React.FC<ChatDetailScreenProps> = ({ navigation, route }) => {
         };
     }, []);
 
-    // Scroll to bottom when new message is added
+    // Scroll to bottom when new messages come
     useEffect(() => {
-        if (messages.length > 0) {
+        if (currentMessages?.length > 0) {
             setTimeout(() => {
                 flatListRef.current?.scrollToEnd({ animated: true });
-            }, 100);
+            }, 200);
         }
-    }, [messages]);
+    }, [currentMessages]);
 
     const handleSend = () => {
-        if (!message.trim()) return;
+        if (!messageText.trim()) return;
 
-        const newMsg: Message = {
-            id: Date.now().toString(),
-            text: message.trim(),
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            sender: 'me',
+        if (!roomId || !user?._id || !receiverId) {
+            return;
+        }
+
+        const tempId = Date.now().toString();
+        const optimisticMessage = {
+            _id: tempId,
+            roomId: roomId,
+            sender: user._id, // Ensure it's user._id so it shows on right side
+            receiver: receiverId,
+            message: messageText.trim(),
+            createdAt: new Date().toISOString(),
+            isTemp: true
         };
 
-        setMessages(prev => [...prev, newMsg]);
-        setMessage('');
+        dispatch(addReceivedMessage(optimisticMessage));
 
-        // Keep keyboard open after sending
-        inputRef.current?.focus();
+        const payload = {
+            roomId: roomId,
+            sender: user._id,
+            receiver: receiverId,
+            message: messageText.trim()
+        };
+
+        socketService.emit('sendMessage', payload);
+        setMessageText('');
+        if (Platform.OS === 'ios') {
+            inputRef.current?.focus();
+        }
     };
 
-    const renderMessage = ({ item }: { item: Message }) => {
-        const isMe = item.sender === 'me';
-        return (
-            <View style={[styles.messageRow, isMe ? styles.myRow : styles.otherRow]}>
-                <View style={[styles.bubble, isMe ? styles.myBubble : styles.otherBubble]}>
-                    <Text style={[styles.msgText, isMe ? styles.myMsgText : styles.otherMsgText]}>
-                        {item.text}
-                    </Text>
-                    <Text style={[styles.timeText, isMe ? styles.myTimeText : styles.otherTimeText]}>
-                        {item.time}
-                    </Text>
-                </View>
+    const handleDeleteMessage = (id: string) => {
+        dispatch(deleteMessage(id));
+        setSelectedMessageId(null);
+    };
 
-            </View>
+    const handleClearChat = () => {
+        if (roomId) {
+            dispatch(clearChat(roomId));
+            setIsMenuOpen(false);
+        }
+    };
+
+    const renderMessage = ({ item }: { item: any }) => {
+        // Robust check for sender - could be a string ID or a populated object
+        const senderId = typeof item.sender === 'object' ? item.sender?._id : item.sender;
+        const isMe = senderId?.toString() === user?._id?.toString();
+        const dateStr = item.createdAt || new Date().toISOString();
+        const time = new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const isSelected = selectedMessageId === item._id;
+
+        return (
+            <TouchableOpacity
+                activeOpacity={1}
+                onLongPress={() => isMe && setSelectedMessageId(item._id)}
+                onPress={() => setSelectedMessageId(null)}
+                style={[styles.messageRow, isMe ? styles.myRow : styles.otherRow]}
+                key={item._id}
+            >
+                <View style={[styles.bubbleWrapper, isMe && styles.myBubbleWrapper]}>
+                    <View style={[styles.bubble, isMe ? styles.myBubble : styles.otherBubble]}>
+                        <Text style={[styles.msgText, isMe ? styles.myMsgText : styles.otherMsgText]}>
+                            {item.message || item.text || ''}
+                        </Text>
+                        <Text style={[styles.timeText, isMe ? styles.myTimeText : styles.otherTimeText]}>
+                            {time}
+                        </Text>
+                    </View>
+                    {isSelected && isMe && (
+                        <TouchableOpacity
+                            style={styles.deleteBtn}
+                            onPress={() => handleDeleteMessage(item._id)}
+                        >
+                            <View style={styles.trashContainer}>
+                                <View style={styles.trashHandle} />
+                                <View style={styles.trashLid} />
+                                <View style={styles.trashBody}>
+                                    <View style={styles.trashLinesContainer}>
+                                        <View style={styles.trashLine} />
+                                        <View style={styles.trashLine} />
+                                        <View style={styles.trashLine} />
+                                    </View>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </TouchableOpacity>
         );
     };
 
@@ -116,63 +203,62 @@ const ChatScreen: React.FC<ChatDetailScreenProps> = ({ navigation, route }) => {
             <StatusBar barStyle="dark-content" backgroundColor={Colors.white} />
 
             <View style={styles.header}>
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.backBtn}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Image source={ICONS.backicon} style={styles.backIcon} resizeMode="contain" />
                 </TouchableOpacity>
                 <View style={styles.userInfo}>
-                    <Image
-                        source={typeof avatar === 'string' ? { uri: avatar } : avatar}
-                        style={styles.avatar}
-                    />
+                    <Image source={typeof avatar === 'string' ? { uri: avatar } : avatar} style={styles.avatar} />
                     <View style={styles.userTextInfo}>
                         <Text style={styles.username}>{name}</Text>
                         <Text style={styles.onlineStatus}>online</Text>
                     </View>
                 </View>
+                <TouchableOpacity onPress={() => setIsMenuOpen(true)} style={styles.menuBtn}>
+                    <View style={styles.threeDotsContainer}>
+                        <View style={styles.dot} />
+                        <View style={styles.dot} />
+                        <View style={styles.dot} />
+                    </View>
+                </TouchableOpacity>
             </View>
 
             <View style={styles.flex1}>
                 <View style={styles.chatSection}>
-                    <FlatList<Message>
-                        ref={flatListRef}
-                        data={messages}
-                        renderItem={renderMessage}
-                        keyExtractor={item => item.id}
-                        contentContainerStyle={styles.listContent}
-                        showsVerticalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
-                        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
-                    />
+                    {loading && currentMessages.length === 0 ? (
+                        <View style={styles.loaderContainer}>
+                            <ActivityIndicator size="large" color={Colors.primary} />
+                        </View>
+                    ) : (
+                        <FlatList<any>
+                            ref={flatListRef}
+                            data={currentMessages}
+                            extraData={[currentMessages, selectedMessageId]}
+                            renderItem={renderMessage}
+                            keyExtractor={item => item._id}
+                            contentContainerStyle={styles.listContent}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                            onContentSizeChange={() => !selectedMessageId && flatListRef.current?.scrollToEnd({ animated: true })}
+                        />
+                    )}
 
-                    <View style={[
-                        styles.inputWrapper,
-                        {
-                            paddingBottom: insets.bottom || verticalScale(8),
-                            marginBottom: keyboardHeight
-                        }
-                    ]}>
+                    <View style={[styles.inputWrapper, { paddingBottom: insets.bottom || verticalScale(8), marginBottom: keyboardHeight }]}>
                         <View style={styles.inputContainer}>
                             <TextInput
                                 ref={inputRef}
-                                style={styles.input}
+                                style={[styles.input, { maxHeight: verticalScale(100) }]}
                                 placeholder="Type a message"
                                 placeholderTextColor={Colors.textSecondary}
-                                value={message}
-                                onChangeText={setMessage}
+                                value={messageText}
+                                onChangeText={setMessageText}
                                 multiline
-                                maxHeight={verticalScale(100)}
                                 onSubmitEditing={handleSend}
                                 blurOnSubmit={false}
                             />
                             <TouchableOpacity
                                 onPress={handleSend}
-                                disabled={!message.trim()}
-                                style={[styles.sendBtn, !message.trim() && styles.sendBtnDisabled]}
-                                activeOpacity={0.7}
+                                disabled={!messageText.trim()}
+                                style={[styles.sendBtn, !messageText.trim() && styles.sendBtnDisabled]}
                             >
                                 <Image source={ICONS.send} resizeMode='contain' style={styles.sendIcon} />
                             </TouchableOpacity>
@@ -180,6 +266,25 @@ const ChatScreen: React.FC<ChatDetailScreenProps> = ({ navigation, route }) => {
                     </View>
                 </View>
             </View>
+
+            {/* Clear Chat Modal */}
+            <Modal
+                transparent
+                visible={isMenuOpen}
+                animationType="fade"
+                onRequestClose={() => setIsMenuOpen(false)}
+            >
+                <Pressable style={styles.modalOverlay} onPress={() => setIsMenuOpen(false)}>
+                    <View style={styles.bottomSheet}>
+                        <TouchableOpacity style={styles.sheetItem} onPress={handleClearChat}>
+                            <Text style={[styles.sheetText, { color: 'red' }]}>Clear Chat</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.sheetItem} onPress={() => setIsMenuOpen(false)}>
+                            <Text style={styles.sheetText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Pressable>
+            </Modal>
         </View>
     );
 };
@@ -236,9 +341,30 @@ const styles = StyleSheet.create({
         color: '#4CAF50',
         lineHeight: moderateScale(16),
     },
+    menuBtn: {
+        padding: Theme.spacing.xs,
+    },
+    threeDotsContainer: {
+        width: moderateScale(24),
+        height: moderateScale(24),
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        paddingVertical: moderateScale(2),
+    },
+    dot: {
+        width: moderateScale(3.5),
+        height: moderateScale(3.5),
+        borderRadius: moderateScale(2),
+        backgroundColor: Colors.black,
+    },
     chatSection: {
         flex: 1,
         backgroundColor: Colors.background,
+    },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     listContent: {
         padding: Theme.spacing.md,
@@ -246,13 +372,21 @@ const styles = StyleSheet.create({
     },
     messageRow: {
         marginBottom: Theme.spacing.md,
-        maxWidth: '80%',
+        width: '100%',
     },
     myRow: {
-        alignSelf: 'flex-end',
+        alignItems: 'flex-end',
     },
     otherRow: {
-        alignSelf: 'flex-start',
+        alignItems: 'flex-start',
+    },
+    bubbleWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        maxWidth: '85%',
+    },
+    myBubbleWrapper: {
+        flexDirection: 'row-reverse',
     },
     bubble: {
         paddingHorizontal: Theme.spacing.md,
@@ -293,6 +427,64 @@ const styles = StyleSheet.create({
     otherTimeText: {
         textAlign: 'left',
     },
+    deleteBtn: {
+        width: moderateScale(32),
+        height: moderateScale(32),
+        borderRadius: moderateScale(16),
+        backgroundColor: Colors.white,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginHorizontal: moderateScale(8),
+        borderWidth: 1,
+        borderColor: Colors.border,
+        ...Theme.shadow.sm,
+        elevation: 3,
+    },
+    trashContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    trashHandle: {
+        width: moderateScale(5),
+        height: moderateScale(2),
+        borderTopWidth: 1.5,
+        borderLeftWidth: 1.5,
+        borderRightWidth: 1.5,
+        borderColor: Colors.black,
+        borderTopLeftRadius: 1,
+        borderTopRightRadius: 1,
+        marginBottom: -1,
+    },
+    trashLid: {
+        width: moderateScale(14),
+        height: moderateScale(2),
+        backgroundColor: Colors.black,
+        borderRadius: 1,
+        marginBottom: 1,
+    },
+    trashBody: {
+        width: moderateScale(12),
+        height: moderateScale(13),
+        borderWidth: 1.5,
+        borderColor: Colors.black,
+        borderBottomLeftRadius: 2,
+        borderBottomRightRadius: 2,
+        backgroundColor: 'transparent',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    trashLinesContainer: {
+        flexDirection: 'row',
+        width: '100%',
+        justifyContent: 'space-evenly',
+        paddingHorizontal: 1,
+    },
+    trashLine: {
+        width: 1,
+        height: moderateScale(7),
+        backgroundColor: Colors.black,
+        borderRadius: 0.5,
+    },
     inputWrapper: {
         backgroundColor: Colors.white,
     },
@@ -329,6 +521,32 @@ const styles = StyleSheet.create({
     sendIcon: {
         width: moderateScale(18),
         height: moderateScale(18),
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    bottomSheet: {
+        backgroundColor: Colors.white,
+        borderTopLeftRadius: moderateScale(20),
+        borderTopRightRadius: moderateScale(20),
+        paddingVertical: Theme.spacing.lg,
+
+    },
+    sheetItem: {
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Colors.border,
+        paddingVertical: moderateScale(12),
+        borderRadius: moderateScale(30),
+        marginHorizontal: Theme.spacing.md,
+        marginVertical: Theme.spacing.xs,
+    },
+    sheetText: {
+        fontSize: moderateScale(16),
+        fontFamily: Theme.fontFamily.semiBold,
+        color: Colors.black,
     },
 });
 

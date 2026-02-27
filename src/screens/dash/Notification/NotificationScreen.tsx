@@ -6,7 +6,6 @@ import {
     SectionList,
     Image,
     TouchableOpacity,
-    SafeAreaView,
     StatusBar,
 } from 'react-native';
 import { Colors } from '../../../constants/colors';
@@ -16,6 +15,8 @@ import Header from '../../../components/commonHeader/Header';
 import type { NotificationScreenProps } from '../../../navigation/types';
 import { ICONS } from '../../../constants/icons';
 import { IMAGES } from '../../../constants/images';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getRandomAvatarColor } from '../../../utils/colorUtils';
 
 // Types for handling different notification visuals
 export type NotificationType = 'follow' | 'like' | 'event' | 'alert' | 'booking';
@@ -123,7 +124,11 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
                     {hasLeftContent && (
                         <View style={styles.leftContainer}>
                             {isSocial ? (
-                                <Image source={{ uri: item.user?.avatar }} style={styles.avatar} />
+                                <Image
+                                    source={{ uri: item.user?.avatar }}
+                                    style={[styles.avatar, { backgroundColor: getRandomAvatarColor(item.user?.name) }]}
+                                    resizeMode="contain"
+                                />
                             ) : (
                                 <View style={styles.typeIconContainer}>
                                     {item.type === 'event' ? (

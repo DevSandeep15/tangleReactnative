@@ -7,7 +7,6 @@ import {
     Image,
     TextInput,
     TouchableOpacity,
-    SafeAreaView,
     StatusBar,
 } from 'react-native';
 import { Colors } from '../../../constants/colors';
@@ -18,134 +17,85 @@ import { ICONS } from '../../../constants/icons';
 import type { InboxScreenProps } from '../../../navigation/types';
 import { IMAGES } from '../../../constants/images';
 
-interface Message {
-    id: string;
-    name: string;
-    lastMessage: string;
-    time: string;
-    avatar: any;
-    isOnline: boolean;
-    unreadCount?: number;
-}
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { getChatList } from '../../../store/slices/chatSlice';
+import { RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const MESSAGES_DATA: Message[] = [
-    {
-        id: '1',
-        name: 'Priya Sharma',
-        lastMessage: 'Thanks for the plumber contact! 🙏',
-        time: '10m',
-        avatar: IMAGES.dummyImage,
-        isOnline: true,
-        unreadCount: 2,
-    },
-    {
-        id: '2',
-        name: 'Rahul Kumar',
-        lastMessage: 'Are you coming to the event tomorrow?',
-        time: '1h',
-        avatar: IMAGES.dummyImage,
-        isOnline: false,
-        unreadCount: 1,
-    },
-    {
-        id: '3',
-        name: 'Anjali Verma',
-        lastMessage: 'Perfect! See you at 6 PM then',
-        time: '2h',
-        avatar: IMAGES.dummyImage,
-        isOnline: true,
-    },
-    {
-        id: '4',
-        name: 'Vikram Singh',
-        lastMessage: 'The cook you recommended is excellent!',
-        time: '5h',
-        avatar: IMAGES.dummyImage,
-        isOnline: false,
-    },
-    {
-        id: '5',
-        name: 'Neha Joshi',
-        lastMessage: 'Count me in for badminton 🏸',
-        time: '1d',
-        avatar: IMAGES.dummyImage,
-        isOnline: true,
-    },
-    {
-        id: '6',
-        name: 'Amit Patel',
-        lastMessage: 'Thanks for organizing the Diwali event!',
-        time: '2d',
-        avatar: IMAGES.dummyImage,
-        isOnline: false,
-    },
-    {
-        id: '7',
-        name: 'Amit Patel',
-        lastMessage: 'Thanks for organizing the Diwali event!',
-        time: '2d',
-        avatar: IMAGES.dummyImage,
-        isOnline: false,
-    }, {
-        id: '8',
-        name: 'Amit Patel',
-        lastMessage: 'Thanks for organizing the Diwali event!',
-        time: '2d',
-        avatar: IMAGES.dummyImage,
-        isOnline: false,
-    },
-];
+import { getRandomAvatarColor } from '../../../utils/colorUtils';
 
 const InboxScreen: React.FC<InboxScreenProps> = ({ navigation }) => {
+    const dispatch = useAppDispatch();
+    const { chatrooms, loading } = useAppSelector(state => state.chat);
+    const { user } = useAppSelector(state => state.auth);
     const [searchQuery, setSearchQuery] = useState('');
 
+    React.useEffect(() => {
+        dispatch(getChatList());
+    }, [dispatch]);
+
+    const onRefresh = React.useCallback(() => {
+        dispatch(getChatList());
+    }, [dispatch]);
+
     const filteredMessages = useMemo(() => {
-        return MESSAGES_DATA.filter((msg) =>
-            msg.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            msg.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
+        if (!chatrooms) return [];
+        return chatrooms.filter((item) => {
+            const otherUser = item.users.find((u: any) => u._id !== user?._id);
+            const name = otherUser?.name || 'Unknown';
+            const lastMsg = item.lastMessage?.message || '';
+            return name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                lastMsg.toLowerCase().includes(searchQuery.toLowerCase());
+        });
+    }, [searchQuery, chatrooms, user?._id]);
+
+    const renderMessageItem = ({ item }: { item: any }) => {
+        const otherUser = item.users.find((u: any) => u._id !== user?._id);
+        const name = otherUser?.name || 'User';
+        const avatar = otherUser?.emoji || IMAGES.dummyAvatar;
+        const lastMessage = item.lastMessage?.message || 'No messages yet';
+        const time = item.lastMessage ? new Date(item.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        const avatarBgColor = getRandomAvatarColor(otherUser?._id);
+
+        return (
+            <TouchableOpacity
+                style={styles.messageCard}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('ChatDetail', {
+                    name: name,
+                    avatar: avatar,
+                    roomId: item._id,
+                    receiverId: otherUser?._id
+                })}
+            >
+                <View style={styles.cardContent}>
+                    {/* Avatar with Online Status */}
+                    <View style={styles.avatarContainer}>
+                        <Image
+                            source={typeof avatar === 'string' ? { uri: avatar } : avatar}
+                            style={[styles.avatar, { backgroundColor: avatarBgColor }]}
+                            resizeMode='contain'
+                        />
+                        {/* Status indicator can be dynamic if available */}
+                        {false && <View style={styles.onlineIndicator} />}
+                    </View>
+
+                    {/* Info Section */}
+                    <View style={styles.infoSection}>
+                        <View style={styles.nameRow}>
+                            <Text style={styles.userName}>{name}</Text>
+                            <Text style={styles.timeText}>{time}</Text>
+                        </View>
+                        <View style={styles.messageRow}>
+                            <Text style={styles.lastMessage} numberOfLines={1}>
+                                {lastMessage}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+            </TouchableOpacity>
         );
-    }, [searchQuery]);
-
-    const renderMessageItem = ({ item }: { item: Message }) => (
-        <TouchableOpacity
-            style={styles.messageCard}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('ChatDetail', {
-                name: item.name,
-                avatar: item.avatar
-            })}
-        >
-            <View style={styles.cardContent}>
-                {/* Avatar with Online Status */}
-                <View style={styles.avatarContainer}>
-                    <Image
-                        source={typeof item.avatar === 'string' ? { uri: item.avatar } : item.avatar}
-                        style={styles.avatar}
-                        resizeMode='contain'
-                    />
-                    {item.isOnline && <View style={styles.onlineIndicator} />}
-                </View>
-
-                {/* Info Section */}
-                <View style={styles.infoSection}>
-                    <View style={styles.nameRow}>
-                        <Text style={styles.userName}>{item.name}</Text>
-                        <Text style={styles.timeText}>{item.time}</Text>
-                    </View>
-                    <View style={styles.messageRow}>
-                        <Text style={styles.lastMessage} numberOfLines={1}>
-                            {item.lastMessage}
-                        </Text>
-                        {item.unreadCount && (
-                            <View style={styles.unreadBadge}>
-                                <Text style={styles.unreadText}>{item.unreadCount}</Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
-            </View>
-        </TouchableOpacity>
-    );
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -170,10 +120,17 @@ const InboxScreen: React.FC<InboxScreenProps> = ({ navigation }) => {
                 {/* Messages List */}
                 <FlatList
                     data={filteredMessages}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item) => item._id}
                     renderItem={renderMessageItem}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={loading}
+                            onRefresh={onRefresh}
+                            colors={[Colors.primary]}
+                        />
+                    }
                     ListEmptyComponent={
                         <View style={styles.emptyContainer}>
                             <Text style={styles.emptyText}>No conversations found</Text>
