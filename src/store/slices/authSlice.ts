@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { getRequest, postRequest } from '../../services/api/apiMethods';
+import { getRequest, postRequest, deleteRequest } from '../../services/api/apiMethods';
 import { URLS } from '../../services/api/urls';
 
 interface AuthState {
@@ -138,6 +138,27 @@ export const getOtherProfile = createAsyncThunk<any, string>(
         } catch (error: any) {
             console.log('--- Get Other Profile Thunk Error ---', error.response?.data || error.message);
             return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch other profile');
+        }
+    }
+);
+
+export const deleteAccount = createAsyncThunk<any, void>(
+    'auth/deleteAccount',
+    async (_, { rejectWithValue }) => {
+        try {
+            console.log('--- Delete Account Thunk Request ---');
+            const response = await deleteRequest<any>(URLS.AUTH.DELETE_ACCOUNT);
+            console.log('--- Delete Account Thunk Success ---', response);
+
+            // Handle cases where API returns 200 OK but with a success: false flag
+            if (response.success === false) {
+                return rejectWithValue(response.message || 'Failed to delete account');
+            }
+
+            return response;
+        } catch (error: any) {
+            console.log('--- Delete Account Thunk Error ---', error.response?.data || error.message);
+            return rejectWithValue(error.response?.data?.message || error.message || 'Failed to delete account');
         }
     }
 );
@@ -293,6 +314,21 @@ const authSlice = createSlice({
                 }
             })
             .addCase(getOtherProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            // Delete Account
+            .addCase(deleteAccount.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(deleteAccount.fulfilled, (state) => {
+                state.loading = false;
+                state.user = null;
+                state.token = null;
+                state.isAuthenticated = false;
+            })
+            .addCase(deleteAccount.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             });

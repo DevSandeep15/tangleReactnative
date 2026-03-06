@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
     View,
     Text,
@@ -12,6 +12,7 @@ import {
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import { moderateScale, scale, verticalScale } from 'react-native-size-matters';
+import { useFocusEffect } from '@react-navigation/native';
 import Header from '../../../components/commonHeader/Header';
 import { ICONS } from '../../../constants/icons';
 import type { InboxScreenProps } from '../../../navigation/types';
@@ -30,9 +31,11 @@ const InboxScreen: React.FC<InboxScreenProps> = ({ navigation }) => {
     const { user } = useAppSelector(state => state.auth);
     const [searchQuery, setSearchQuery] = useState('');
 
-    React.useEffect(() => {
-        dispatch(getChatList());
-    }, [dispatch]);
+    useFocusEffect(
+        useCallback(() => {
+            dispatch(getChatList());
+        }, [dispatch])
+    );
 
     const onRefresh = React.useCallback(() => {
         dispatch(getChatList());

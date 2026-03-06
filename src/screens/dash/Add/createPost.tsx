@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useMemo, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import {
     View,
     Text,
@@ -10,6 +10,7 @@ import {
     Image,
     Keyboard,
     Alert,
+    BackHandler,
 } from 'react-native';
 import BottomSheet, {
     BottomSheetBackdrop,
@@ -25,6 +26,8 @@ import Geolocation from '@react-native-community/geolocation';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { createPost, getPosts } from '../../../store/slices/postSlice';
 import Toast from 'react-native-toast-message';
+import { getRandomAvatarColor } from '../../../utils/colorUtils';
+import { ICONS } from '../../../constants/icons';
 
 // Custom Components
 import PostTypeSelector, { PostType } from './PostTypeSelector';
@@ -56,8 +59,31 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
         const [location, setLocation] = useState<any>(null);
         const [isLocationLoading, setIsLocationLoading] = useState(false);
 
+        const [isSheetOpen, setIsSheetOpen] = useState(false);
         const snapPoints = useMemo(() => ['95%'], []);
         const sheetRef = React.useRef<BottomSheet>(null);
+
+        useEffect(() => {
+            const backAction = () => {
+                if (isSheetOpen) {
+                    Keyboard.dismiss();
+                    sheetRef.current?.close();
+                    return true;
+                }
+                return false;
+            };
+
+            const backHandler = BackHandler.addEventListener(
+                'hardwareBackPress',
+                backAction,
+            );
+
+            return () => backHandler.remove();
+        }, [isSheetOpen]);
+
+        const handleSheetChange = useCallback((index: number) => {
+            setIsSheetOpen(index !== -1);
+        }, []);
 
         // Ref methods
         React.useImperativeHandle(ref, () => ({
@@ -254,15 +280,26 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                     backgroundStyle={styles.background}
                     keyboardBehavior="interactive"
                     keyboardBlurBehavior="restore"
+                    onChange={handleSheetChange}
                 >
 
                     <View style={styles.container}>
                         {/* Header */}
                         <View style={styles.header}>
                             <View style={styles.headerLeft}>
-                                <Image source={IMAGES.dummyImage} style={styles.avatar} />
+                                {user?.emoji ? (
+                                    <Image
+                                        source={{ uri: user.emoji }}
+                                        style={[styles.avatar, { backgroundColor: getRandomAvatarColor(user?._id || user?.id) }]}
+                                        resizeMode="contain"
+                                    />
+                                ) : (
+                                    <View style={[styles.avatar, { backgroundColor: getRandomAvatarColor(user?._id || user?.id), justifyContent: 'center', alignItems: 'center' }]}>
+                                        <Image source={ICONS.profileTab} style={{ width: scale(25), height: scale(25), tintColor: Colors.textSecondary }} />
+                                    </View>
+                                )}
                                 <View style={styles.titleContainer}>
-                                    <Text style={styles.title}>Create Post</Text>
+                                    <Text style={styles.title}>{user?.name || 'Create Post'}</Text>
                                     <Text style={styles.subtitle}>Share with your community</Text>
                                 </View>
                             </View>

@@ -12,6 +12,7 @@ export const URLS = {
         GET_PROFILE: `${BASE_URL}/api/user/get-profile`,
         GET_RECOMMENDED_USERS: `${BASE_URL}/api/user/sameinterest-users`,
         GET_OTHER_PROFILE: `${BASE_URL}/api/user/get-profile-user`,
+        DELETE_ACCOUNT: `${BASE_URL}/api/user/delete-account`,
     },
     CHAT: {
         CREATE_CHATROOM: `${BASE_URL}/api/user/create-chatroom`,

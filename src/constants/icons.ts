@@ -26,6 +26,8 @@ import google from '../assets/icons/google.png';
 import apple from '../assets/icons/apple.png';
 import mail from '../assets/icons/mail.png';
 import thumb from '../assets/icons/thumb.png';
+import deleteIcon from '../assets/icons/delete.png';
+
 
 
 
@@ -60,7 +62,8 @@ export const ICONS = {
     google,
     apple,
     mail,
-    thumb
+    thumb,
+    deleteIcon
 };
 
 // Export individual icons for direct imports if needed
@@ -92,5 +95,6 @@ export {
     google,
     apple,
     mail,
-    thumb
+    thumb,
+    deleteIcon
 };

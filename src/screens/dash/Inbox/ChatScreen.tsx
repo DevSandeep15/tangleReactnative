@@ -210,7 +210,6 @@ const ChatScreen: React.FC<ChatDetailScreenProps> = ({ navigation, route }) => {
                     <Image source={typeof avatar === 'string' ? { uri: avatar } : avatar} style={styles.avatar} />
                     <View style={styles.userTextInfo}>
                         <Text style={styles.username}>{name}</Text>
-                        <Text style={styles.onlineStatus}>online</Text>
                     </View>
                 </View>
                 <TouchableOpacity onPress={() => setIsMenuOpen(true)} style={styles.menuBtn}>
@@ -334,12 +333,6 @@ const styles = StyleSheet.create({
         fontFamily: Theme.fontFamily.bold,
         color: Colors.black,
         lineHeight: moderateScale(20),
-    },
-    onlineStatus: {
-        fontSize: moderateScale(12),
-        fontFamily: Theme.fontFamily.regular,
-        color: '#4CAF50',
-        lineHeight: moderateScale(16),
     },
     menuBtn: {
         padding: Theme.spacing.xs,

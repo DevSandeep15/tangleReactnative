@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, StatusBar, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, StatusBar, RefreshControl, ActivityIndicator, Alert } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import { moderateScale, verticalScale, scale } from 'react-native-size-matters';
@@ -8,7 +8,7 @@ import Header from '../../../components/commonHeader/Header';
 import { ICONS } from '../../../constants/icons';
 import { IMAGES } from '../../../constants/images';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
-import { logout, getProfile, getOtherProfile, clearOtherUser } from '../../../store/slices/authSlice';
+import { logout, getProfile, getOtherProfile, clearOtherUser, deleteAccount } from '../../../store/slices/authSlice';
 import { createChatroom } from '../../../store/slices/chatSlice';
 import socketService from '../../../services/socketService';
 import Toast from 'react-native-toast-message';
@@ -140,6 +140,35 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
         dispatch(logout());
     };
 
+    const handleDeleteAccount = useCallback(() => {
+        Alert.alert(
+            'Delete Account',
+            'Are you sure you want to delete your account? This action cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await dispatch(deleteAccount()).unwrap();
+                            Toast.show({
+                                type: 'success',
+                                text1: 'Account Deleted',
+                                text2: 'Your account has been successfully deleted.'
+                            });
+                        } catch (error: any) {
+                            Toast.show({
+                                type: 'error',
+                                text1: 'Error',
+                                text2: error || 'Failed to delete account'
+                            });
+                        }
+                    }
+                },
+            ]
+        );
+    }, [dispatch]);
     const SETTINGS_OPTIONS: SettingOption[] = [
         {
             id: '1',
@@ -161,6 +190,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
         },
         {
             id: '4',
+            label: 'Delete Account',
+            icon: ICONS.deleteIcon,
+            onPress: handleDeleteAccount,
+        },
+        {
+            id: '5',
             label: 'Logout',
             icon: ICONS.logout,
             isDestructive: true,
