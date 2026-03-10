@@ -64,13 +64,12 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
         const sheetRef = React.useRef<BottomSheet>(null);
 
         useEffect(() => {
+            if (!isSheetOpen) return;
+
             const backAction = () => {
-                if (isSheetOpen) {
-                    Keyboard.dismiss();
-                    sheetRef.current?.close();
-                    return true;
-                }
-                return false;
+                Keyboard.dismiss();
+                sheetRef.current?.close();
+                return true;
             };
 
             const backHandler = BackHandler.addEventListener(

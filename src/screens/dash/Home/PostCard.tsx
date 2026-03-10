@@ -1,5 +1,6 @@
 import React, { memo, useMemo, useCallback, useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, Dimensions, ImageProps } from 'react-native';
+import OptimizedImage from '../../../components/common/OptimizedImage';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import { moderateScale } from 'react-native-size-matters';
@@ -105,7 +106,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
         <View style={styles.card}>
             <View style={styles.header}>
                 <TouchableOpacity style={styles.authorInfo} onPress={onProfilePress} activeOpacity={0.7}>
-                    <Image
+                    <OptimizedImage
                         source={{ uri: authorAvatar }}
                         style={[styles.avatar, { backgroundColor: getRandomAvatarColor(authorId) }]}
                         resizeMode="contain"
@@ -147,7 +148,7 @@ const PostCard: React.FC<PostCardProps> = memo(({
                                 activeOpacity={0.9}
                                 onPress={handleImagePress}
                             >
-                                <Image
+                                <OptimizedImage
                                     source={{ uri: item }}
                                     style={styles.postImage}
                                     resizeMode="cover"

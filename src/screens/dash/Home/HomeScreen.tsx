@@ -25,6 +25,7 @@ import { getRecommendedUsers } from '../../../store/slices/authSlice';
 import { createChatroom } from '../../../store/slices/chatSlice';
 import socketService from '../../../services/socketService';
 import Toast from 'react-native-toast-message';
+import ErrorBoundary from '../../../components/common/ErrorBoundary';
 
 // Recommended users will be fetched from Redux state
 
@@ -170,23 +171,25 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }, [loading]);
 
     const renderPost = useCallback(({ item }: { item: any }) => (
-        <PostCard
-            postId={item._id}
-            authorName={item.user?.name || 'User'}
-            authorId={item.user?._id}
-            authorAvatar={item.user?.emoji || 'https://i.pravatar.cc/150?u=' + item.user?._id}
-            timeAgo={new Date(item.createdAt).toLocaleDateString()}
-            tag={item.post_type?.charAt(0).toUpperCase() + item.post_type?.slice(1)}
-            content={item.desc}
-            hashtags={item.tags || []}
-            postImages={item.image}
-            views={item.views || 0}
-            likes={item.total_likes || 0}
-            comments={item.total_comments || 0}
-            initialIsLiked={item.is_liked}
-            onCommentPress={() => handleCommentPress(item._id)}
-            onProfilePress={() => navigation.navigate('Profile', { userId: item.user?._id })}
-        />
+        <ErrorBoundary>
+            <PostCard
+                postId={item._id}
+                authorName={item.user?.name || 'User'}
+                authorId={item.user?._id}
+                authorAvatar={item.user?.emoji || 'https://i.pravatar.cc/150?u=' + item.user?._id}
+                timeAgo={new Date(item.createdAt).toLocaleDateString()}
+                tag={item.post_type?.charAt(0).toUpperCase() + item.post_type?.slice(1)}
+                content={item.desc}
+                hashtags={item.tags || []}
+                postImages={item.image}
+                views={item.views || 0}
+                likes={item.total_likes || 0}
+                comments={item.total_comments || 0}
+                initialIsLiked={item.is_liked}
+                onCommentPress={() => handleCommentPress(item._id)}
+                onProfilePress={() => navigation.navigate('Profile', { userId: item.user?._id })}
+            />
+        </ErrorBoundary>
     ), [handleCommentPress, navigation, user]);
 
     const listFooter = useMemo(() => <View style={{ height: moderateScale(20) }} />, []);
@@ -218,10 +221,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 contentContainerStyle={styles.listContent}
                 ListFooterComponent={listFooter}
                 initialNumToRender={5}
-                maxToRenderPerBatch={5}
+                maxToRenderPerBatch={10}
                 windowSize={5}
                 removeClippedSubviews={true}
                 updateCellsBatchingPeriod={50}
+                onEndReachedThreshold={0.5}
             />
         </SafeAreaView>
     );

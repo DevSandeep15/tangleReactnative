@@ -6,6 +6,9 @@ const DEFAULT_OPTIONS: Options = {
     height: 1200,
     cropping: true,
     mediaType: 'photo',
+    compressImageQuality: 0.8,
+    compressImageMaxWidth: 1200,
+    compressImageMaxHeight: 1200,
 };
 
 class ImagePickerService {
@@ -24,6 +27,9 @@ class ImagePickerService {
                 if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
                     return null;
                 }
+
+                // Add a small delay to ensure Activity transition is smooth
+                await new Promise<void>(resolve => setTimeout(resolve, 500));
             }
 
             const image = await ImagePicker.openCamera({ ...DEFAULT_OPTIONS, ...customOptions });

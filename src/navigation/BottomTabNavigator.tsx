@@ -6,13 +6,16 @@ import type { RootTabParamList } from './types';
 import { Colors } from '../constants/colors';
 import { Theme } from '../constants/theme';
 
-import ServiceScreen from '../screens/dash/Service/ServiceScreen';
-import HomeScreen from '../screens/dash/Home/HomeScreen';
-import HubScreen from '../screens/dash/Hub/HubScreen';
-import ProfileScreen from '../screens/dash/Profile/ProfileScreen';
+import {
+    HomeScreen,
+    ServiceScreen,
+    HubScreen,
+    ProfileScreen,
+    CreatePost,
+} from '../screens/dash';
+import { CreatePostBottomSheetRef } from '../screens/dash/Add/createPost';
 import { ICONS } from '../constants/icons';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
-import CreatePost, { CreatePostBottomSheetRef } from '../screens/dash/Add/createPost';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
@@ -191,7 +194,7 @@ const BottomTabNavigator: React.FC = () => {
                 />
                 <Tab.Screen
                     name="Add"
-                    component={CreatePost}
+                    component={() => <View />}
                     options={{
                         tabBarLabel: '',
                         headerTitle: 'Create',
