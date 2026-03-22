@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { getRequest, postRequest, deleteRequest } from '../../services/api/apiMethods';
 import { URLS } from '../../services/api/urls';
+import FCMService from '../../services/FCMService';
 
 interface AuthState {
     token: string | null;
@@ -29,8 +30,17 @@ export const login = createAsyncThunk<any, any>(
     'auth/login',
     async (credentials: any, { rejectWithValue }) => {
         try {
-            console.log('--- Login Thunk Request ---', credentials);
-            const response = await postRequest<any>(URLS.AUTH.LOGIN, credentials);
+            const device_token = await FCMService.getDeviceToken();
+            const device_type = FCMService.getDeviceType();
+
+            const payload = {
+                ...credentials,
+                device_token: device_token || 'no_token',
+                device_type: device_type
+            };
+
+            console.log('--- Login Thunk Request ---', payload);
+            const response = await postRequest<any>(URLS.AUTH.LOGIN, payload);
             console.log('--- Login Thunk Success ---', response);
             return response;
         } catch (error: any) {
@@ -74,8 +84,17 @@ export const registerUser = createAsyncThunk<any, any>(
     'auth/registerUser',
     async (userData: any, { rejectWithValue }) => {
         try {
-            console.log('--- Register Thunk Request ---', userData);
-            const response = await postRequest<any>(URLS.AUTH.COMPLETE_SIGNUP, userData);
+            const device_token = await FCMService.getDeviceToken();
+            const device_type = FCMService.getDeviceType();
+
+            const payload = {
+                ...userData,
+                device_token: device_token || 'no_token',
+                device_type: device_type
+            };
+
+            console.log('--- Register Thunk Request ---', payload);
+            const response = await postRequest<any>(URLS.AUTH.COMPLETE_SIGNUP, payload);
             console.log('--- Register Thunk Success ---', response);
             return response;
         } catch (error: any) {
@@ -138,6 +157,28 @@ export const getOtherProfile = createAsyncThunk<any, string>(
         } catch (error: any) {
             console.log('--- Get Other Profile Thunk Error ---', error.response?.data || error.message);
             return rejectWithValue(error.response?.data?.message || error.message || 'Failed to fetch other profile');
+        }
+    }
+);
+
+export const googleLogin = createAsyncThunk<any, { idToken: string; device_token: string; device_type: string }>(
+    'auth/googleLogin',
+    async (payload, { rejectWithValue }) => {
+        try {
+            console.log('--- Google Login Thunk Request ---', payload);
+            const response = await postRequest<any>(URLS.AUTH.GOOGLE_LOGIN, payload);
+            console.log('--- Google Login Thunk Success ---', response);
+            return response;
+        } catch (error: any) {
+            const errorMsg = error.response?.data?.message || error.message || 'Google Login failed';
+            console.log('--- Google Login Thunk Error ---', {
+                message: errorMsg,
+                status: error.response?.status,
+                data: error.response?.data,
+                url: URLS.AUTH.GOOGLE_LOGIN,
+                sentPayload: payload
+            });
+            return rejectWithValue(errorMsg);
         }
     }
 );
@@ -314,6 +355,37 @@ const authSlice = createSlice({
                 }
             })
             .addCase(getOtherProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            // Google Login
+            .addCase(googleLogin.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(googleLogin.fulfilled, (state, action) => {
+                state.loading = false;
+                const data = action.payload.data || action.payload;
+
+                if (data.token || action.payload.token) {
+                    const user = data.user || action.payload.user || (data._id ? data : null);
+                    state.token = data.token || action.payload.token;
+                    state.user = user;
+
+                    // ROBUST CHECK: Only set authenticated if profile is COMPLETE.
+                    // If society_name is missing, they MUST go through onboarding.
+                    const isProfileComplete = user?.society_name && !data.isNewUser && !data.newUser;
+
+                    if (isProfileComplete) {
+                        state.isAuthenticated = true;
+                        console.log('--- Google Login: Profile Complete ---');
+                    } else {
+                        state.isAuthenticated = false;
+                        console.log('--- Google Login: Profile Incomplete, Setup Required ---');
+                    }
+                }
+            })
+            .addCase(googleLogin.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             })

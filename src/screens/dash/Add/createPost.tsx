@@ -15,6 +15,7 @@ import {
 import BottomSheet, {
     BottomSheetBackdrop,
     BottomSheetScrollView,
+    BottomSheetFooter,
 } from '@gorhom/bottom-sheet';
 import { scale, verticalScale, moderateScale } from 'react-native-size-matters';
 import { Colors } from '../../../constants/colors';
@@ -267,6 +268,35 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
             []
         );
 
+        const renderFooter = useCallback(
+            (props: any) => (
+                <BottomSheetFooter {...props} bottomInset={0}>
+                    <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 10, Theme.spacing.lg) }]}>
+                        <TouchableOpacity
+                            style={styles.cancelButton}
+                            onPress={handleClose}
+                        >
+                            <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[
+                                styles.postButton,
+                                { opacity: (postText.trim() && selectedImages.length > 0) ? 1 : 0.6 }
+                            ]}
+                            onPress={handlePost}
+                            disabled={!(postText.trim() && selectedImages.length > 0)}
+                        >
+                            <Text style={[
+                                styles.postButtonText,
+                                { color: (postText.trim() || selectedImages.length > 0) ? Colors.text : Colors.textTertiary }
+                            ]}>{postLoading ? 'Posting...' : 'Post Community'}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </BottomSheetFooter>
+            ),
+            [insets.bottom, postText, selectedImages.length, postLoading, handlePost, handleClose]
+        );
+
         return (
             <>
                 <BottomSheet
@@ -275,6 +305,7 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                     snapPoints={snapPoints}
                     enablePanDownToClose
                     backdropComponent={renderBackdrop}
+                    footerComponent={renderFooter}
                     handleIndicatorStyle={styles.handleIndicator}
                     backgroundStyle={styles.background}
                     keyboardBehavior="interactive"
@@ -309,7 +340,7 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
 
                         <BottomSheetScrollView
                             style={{ flex: 1 }}
-                            contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
+                            contentContainerStyle={[styles.scrollContent, { flexGrow: 1, paddingBottom: verticalScale(100) }]}
                             keyboardShouldPersistTaps="handled"
                             showsVerticalScrollIndicator={false}
                         >
@@ -387,28 +418,6 @@ const CreatePost = forwardRef<CreatePostBottomSheetRef, Props>(
                                 </View>
                             )}
                         </BottomSheetScrollView>
-
-                        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 10, Theme.spacing.lg) }]}>
-                            <TouchableOpacity
-                                style={styles.cancelButton}
-                                onPress={handleClose}
-                            >
-                                <Text style={styles.cancelButtonText}>Cancel</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.postButton,
-                                    { opacity: (postText.trim() && selectedImages.length > 0) ? 1 : 0.6 }
-                                ]}
-                                onPress={handlePost}
-                                disabled={!(postText.trim() && selectedImages.length > 0)}
-                            >
-                                <Text style={[
-                                    styles.postButtonText,
-                                    { color: (postText.trim() || selectedImages.length > 0) ? Colors.text : Colors.textTertiary }
-                                ]}>{postLoading ? 'Posting...' : 'Post Community'}</Text>
-                            </TouchableOpacity>
-                        </View>
                     </View>
                 </BottomSheet>
 

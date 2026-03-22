@@ -15,7 +15,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'SetupProfile'>;
 
 const SetupProfileScreen: React.FC<Props> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
-    const { email } = route.params || {};
+    const { email, social_type } = route.params || {};
+    const isSocialLogin = !!social_type;
 
     const [name, setName] = useState('');
     const [age, setAge] = useState('');
@@ -49,15 +50,16 @@ const SetupProfileScreen: React.FC<Props> = ({ navigation, route }) => {
             return 'Please select your gender';
         }
 
-        if (!password.trim()) {
-            return 'Please set a password';
-        } else if (password.length < 6) {
-            return 'Password should be at least 6 characters';
+        if (!isSocialLogin) {
+            if (!password.trim()) {
+                return 'Please set a password';
+            } else if (password.length < 6) {
+                return 'Password should be at least 6 characters';
+            }
         }
 
         return null; // No errors
     };
-
 
     const handleNext = () => {
         const error = validate();
@@ -70,6 +72,7 @@ const SetupProfileScreen: React.FC<Props> = ({ navigation, route }) => {
                 age: Number(age),
                 gender: gender,
                 password: password,
+                social_type: social_type
             });
         } else {
             Toast.show({
@@ -110,14 +113,16 @@ const SetupProfileScreen: React.FC<Props> = ({ navigation, route }) => {
                                 keyboardType="numeric"
                             />
 
-                            <TextField
-                                label="Set a password"
-                                placeholder="Password"
-                                value={password}
-                                onChangeText={setPassword}
-                                isPassword
-                                secureTextEntry
-                            />
+                            {!isSocialLogin && (
+                                <TextField
+                                    label="Set a password"
+                                    placeholder="Password"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    isPassword
+                                    secureTextEntry
+                                />
+                            )}
 
                             {/* Gender Selection */}
                             <TouchableOpacity onPress={toggleGenderDropdown} activeOpacity={0.8}>

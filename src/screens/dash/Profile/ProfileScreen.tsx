@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, StatusBar, RefreshControl, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, StatusBar, RefreshControl, ActivityIndicator, Alert, Linking } from 'react-native';
 import { Colors } from '../../../constants/colors';
 import { Theme } from '../../../constants/theme';
 import { moderateScale, verticalScale, scale } from 'react-native-size-matters';
@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { logout, getProfile, getOtherProfile, clearOtherUser, deleteAccount } from '../../../store/slices/authSlice';
 import { createChatroom } from '../../../store/slices/chatSlice';
 import socketService from '../../../services/socketService';
+import GoogleSigninService from '../../../services/GoogleSigninService';
 import Toast from 'react-native-toast-message';
 import { getRandomAvatarColor } from '../../../utils/colorUtils';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -136,7 +137,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
         }
     }, [dispatch, navigation, user, displayedUser, isOwnProfile]);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await GoogleSigninService.signOut();
         dispatch(logout());
     };
 
@@ -151,6 +153,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
                     style: 'destructive',
                     onPress: async () => {
                         try {
+                            await GoogleSigninService.revokeAccess();
                             await dispatch(deleteAccount()).unwrap();
                             Toast.show({
                                 type: 'success',
@@ -184,18 +187,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation, route }) => {
         },
         {
             id: '3',
-            label: 'Privacy & Security',
+            label: 'Terms & Conditions',
             icon: ICONS.setting,
-            onPress: () => console.log('Privacy & Security pressed'),
+            onPress: () => Linking.openURL('https://tangle-frontend.vercel.app/terms'),
         },
         {
             id: '4',
+            label: 'Privacy & Security',
+            icon: ICONS.setting,
+            onPress: () => Linking.openURL('https://tangle-frontend.vercel.app/privacy-policy'),
+        },
+        {
+            id: '5',
             label: 'Delete Account',
             icon: ICONS.deleteIcon,
             onPress: handleDeleteAccount,
         },
         {
-            id: '5',
+            id: '6',
             label: 'Logout',
             icon: ICONS.logout,
             isDestructive: true,

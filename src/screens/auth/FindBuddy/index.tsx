@@ -56,7 +56,8 @@ const FindBuddyScreen: React.FC<Props> = ({ navigation, route }) => {
             activity_alerts: params.activity_alerts,
             event_reminders: params.event_reminders,
             chat_notifications: params.chat_notifications,
-            buddies: sentRequests.length > 0 ? sentRequests[0] : "65b8f2c9c3a2d45a9b123456" // Mock or first selected buddy
+            buddies: sentRequests.length > 0 ? sentRequests[0] : "65b8f2c9c3a2d45a9b123456", // Mock or first selected buddy
+            social_type: params.social_type
         };
         const resultAction = await dispatch(registerUser(payload));
 

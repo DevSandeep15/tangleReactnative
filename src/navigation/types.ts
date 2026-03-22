@@ -20,13 +20,14 @@ export type AuthStackParamList = {
     ResetPassword: { email: string };
     Signup: undefined;
     Verification: { email: string };
-    SetupProfile: { email: string };
+    SetupProfile: { email: string; social_type?: string };
     Location: {
         email: string;
         name: string;
         age: number;
         gender: string;
         password?: string;
+        social_type?: string;
     };
     Interests: {
         email: string;
@@ -36,6 +37,7 @@ export type AuthStackParamList = {
         password?: string;
         society_name: string;
         flat_number: string;
+        social_type?: string;
     };
     CreateAvatar: {
         email: string;
@@ -46,6 +48,7 @@ export type AuthStackParamList = {
         society_name: string;
         flat_number: string;
         preferred_interest: string[];
+        social_type?: string;
     };
     NotificationPreference: {
         email: string;
@@ -59,6 +62,7 @@ export type AuthStackParamList = {
         emoji_name: string;
         emoji: string;
         emoji_url: string;
+        social_type?: string;
     };
     FinishAuth: {
         email: string;
@@ -75,6 +79,7 @@ export type AuthStackParamList = {
         activity_alerts: boolean;
         event_reminders: boolean;
         chat_notifications: boolean;
+        social_type?: string;
     };
     FindBuddy: {
         email: string;
@@ -91,6 +96,7 @@ export type AuthStackParamList = {
         activity_alerts: boolean;
         event_reminders: boolean;
         chat_notifications: boolean;
+        social_type?: string;
     };
 };
 
@@ -101,6 +107,7 @@ export type RootStackParamList = {
     Notifications: undefined;
     Inbox: undefined;
     ChatDetail: { name: string; avatar: any; roomId?: string; receiverId?: string };
+    PostDetail: { postId: string };
 };
 
 export type WelcomeScreenProps = NativeStackScreenProps<AuthStackParamList, 'Welcome'>;

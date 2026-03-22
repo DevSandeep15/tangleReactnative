@@ -13,6 +13,7 @@ export const URLS = {
         GET_RECOMMENDED_USERS: `${BASE_URL}/api/user/sameinterest-users`,
         GET_OTHER_PROFILE: `${BASE_URL}/api/user/get-profile-user`,
         DELETE_ACCOUNT: `${BASE_URL}/api/user/delete-account`,
+        GOOGLE_LOGIN: `${BASE_URL}/api/user/google-login`,
     },
     CHAT: {
         CREATE_CHATROOM: `${BASE_URL}/api/user/create-chatroom`,
@@ -27,5 +28,8 @@ export const URLS = {
         LIKE_POST: `${BASE_URL}/api/user/like-unlike-post`,
         ADD_COMMENT: `${BASE_URL}/api/user/add-comment`,
         GET_COMMENTS: `${BASE_URL}/api/user/get-post-comments`,
+    },
+    NOTIFICATION: {
+        GET_NOTIFICATIONS: `${BASE_URL}/api/user/get-notifications`,
     },
 };

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import {
     View,
     Text,
@@ -17,116 +17,87 @@ import { ICONS } from '../../../constants/icons';
 import { IMAGES } from '../../../constants/images';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getRandomAvatarColor } from '../../../utils/colorUtils';
+import { useAppDispatch, useAppSelector } from '../../../store/hooks';
+import { getNotifications } from '../../../store/slices/notificationSlice';
 
 // Types for handling different notification visuals
-export type NotificationType = 'follow' | 'like' | 'event' | 'alert' | 'booking';
-
 export interface NotificationItem {
-    id: string;
-    type: NotificationType;
-    user?: {
+    _id: string;
+    type: string;
+    sender_id?: {
+        _id: string;
         name: string;
-        avatar: string;
+        emoji?: string;
     };
-    postImage?: string;
-    title?: string;
-    description?: string;
-    time: string;
-    isNew: boolean;
+    message?: string;
+    post_id?: {
+        _id: string;
+        desc?: string;
+        image?: string[];
+    };
+    createdAt: string;
+    read: boolean;
 }
 
-const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
-    // Dynamic data structure - mimics an API response
-    const notifications: NotificationItem[] = [
-        {
-            id: '1',
-            type: 'follow',
-            user: {
-                name: 'Ajay talwar',
-                avatar: 'https://i.pravatar.cc/150?u=ajay',
-            },
-            time: '34m',
-            isNew: true,
-        },
-        {
-            id: '2',
-            type: 'follow',
-            user: {
-                name: 'Nikki',
-                avatar: 'https://i.pravatar.cc/150?u=nikki',
-            },
-            time: '1hr',
-            isNew: true,
-        },
-        {
-            id: '3',
-            type: 'like',
-            user: {
-                name: 'Tiya',
-                avatar: 'https://i.pravatar.cc/150?u=tiya',
-            },
-            postImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=200',
-            time: '1hr',
-            isNew: true,
-        },
-        {
-            id: '4',
-            type: 'event',
-            title: 'Event Reminder:',
-            description: 'Diwali Celebration tomorrow 6 PM',
-            time: '1hr',
-            isNew: true,
-        },
-        {
-            id: '5',
-            type: 'alert',
-            title: 'Society Alert:',
-            description: 'Water supply disruption Sunday 9 AM',
-            time: '1hr',
-            isNew: false,
-        },
-        {
-            id: '6',
-            type: 'like',
-            user: {
-                name: 'Tiya',
-                avatar: 'https://i.pravatar.cc/150?u=tiya',
-            },
-            postImage: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&q=80&w=200',
-            time: '1hr',
-            isNew: false,
-        },
-        {
-            id: '7',
-            type: 'booking',
-            title: 'Booking Confirmed:',
-            description: 'Sunita Devi will arrive tomorrow 10 AM',
-            time: '1hr',
-            isNew: false,
-        },
-    ];
+const timeAgo = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (seconds < 60) return `Just now`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}hr`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d`;
+    return date.toLocaleDateString();
+};
 
-    // Prepare sections for grouped rendering
-    const sections = useMemo(() => [
-        { title: 'New', data: notifications.filter(n => n.isNew) },
-        { title: 'Earlier', data: notifications.filter(n => !n.isNew) },
-    ], [notifications]);
+const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
+    const dispatch = useAppDispatch();
+    const { notifications: apiNotifications, loading } = useAppSelector((state) => state.notification);
+
+    useEffect(() => {
+        dispatch(getNotifications());
+    }, [dispatch]);
+
+
+    const notifications = (apiNotifications && apiNotifications.length > 0) ? (apiNotifications as NotificationItem[]) : [];
+    const sections = useMemo(() => {
+        if (!notifications.length) return [];
+        return [
+            { title: 'New', data: notifications.filter((n: NotificationItem) => !n.read) },
+            { title: 'Earlier', data: notifications.filter((n: NotificationItem) => n.read) },
+        ].filter(section => section.data.length > 0);
+    }, [notifications]);
+
+    const handleNotificationPress = (item: NotificationItem) => {
+        if (item.post_id?._id) {
+            navigation.navigate('PostDetail', { postId: item.post_id._id });
+        }
+    };
 
     const renderItem = ({ item }: { item: NotificationItem }) => {
         const isSocial = item.type === 'follow' || item.type === 'like';
         const hasLeftContent = isSocial || ['event', 'alert', 'booking'].includes(item.type);
-        const hasRightContent = item.type === 'follow' || (item.type === 'like' && item.postImage);
+        const postImage = item.post_id?.image?.[0];
+        const hasRightContent = item.type === 'follow' || (item.type === 'like' && postImage);
 
         return (
-            <View style={styles.notificationCard}>
+            <TouchableOpacity 
+                style={styles.notificationCard} 
+                activeOpacity={0.7} 
+                onPress={() => handleNotificationPress(item)}
+            >
                 <View style={styles.cardContent}>
                     {/* Left side: Avatar or Icon */}
                     {hasLeftContent && (
                         <View style={styles.leftContainer}>
                             {isSocial ? (
                                 <Image
-                                    source={{ uri: item.user?.avatar }}
-                                    style={[styles.avatar, { backgroundColor: getRandomAvatarColor(item.user?.name) }]}
+                                    source={{ uri: item.sender_id?.emoji }}
+                                    style={[styles.avatar, { backgroundColor: getRandomAvatarColor(item.sender_id?.name) }]}
                                     resizeMode="contain"
                                 />
                             ) : (
@@ -150,16 +121,16 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
                         <Text style={styles.messageText}>
                             {isSocial ? (
                                 <Text>
-                                    <Text style={styles.boldText}>{item.user?.name}</Text>
-                                    {item.type === 'follow' ? ' started following you.' : ' liked your post.'}
+                                    <Text style={styles.boldText}>{item.sender_id?.name}</Text>
+                                    {' '}{item.message || (item.type === 'follow' ? 'started following you.' : 'liked your post.')}
                                 </Text>
                             ) : (
                                 <Text>
-                                    <Text style={styles.boldText}>{item.title} </Text>
-                                    {item.description}
+                                    <Text style={styles.boldText}>{item.type} </Text>
+                                    {item.message || ''}
                                 </Text>
                             )}
-                            <Text style={styles.timeText}> {item.time}</Text>
+                            <Text style={styles.timeText}> {timeAgo(item.createdAt)}</Text>
                         </Text>
                     </View>
 
@@ -171,13 +142,13 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
                                     <Text style={styles.followButtonText}>Follow back</Text>
                                 </TouchableOpacity>
                             )}
-                            {item.type === 'like' && item.postImage && (
-                                <Image source={{ uri: item.postImage }} style={styles.postThumbnail} />
+                            {item.type === 'like' && postImage && (
+                                <Image source={{ uri: postImage }} style={styles.postThumbnail} />
                             )}
                         </View>
                     )}
                 </View>
-            </View>
+            </TouchableOpacity>
         );
     };
 
@@ -188,7 +159,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
 
             <SectionList
                 sections={sections as any}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item: any, index) => item.id || item._id || index.toString()}
                 renderItem={renderItem}
                 renderSectionHeader={({ section: { title } }) => (
                     <Text style={styles.sectionHeader}>{title}</Text>
@@ -196,6 +167,8 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
                 contentContainerStyle={styles.listContent}
                 stickySectionHeadersEnabled={false}
                 showsVerticalScrollIndicator={false}
+                refreshing={loading}
+                onRefresh={() => dispatch(getNotifications())}
             />
         </SafeAreaView>
     );

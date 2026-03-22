@@ -3,7 +3,6 @@ import {
     View,
     Text,
     StyleSheet,
-    SafeAreaView,
     KeyboardAvoidingView,
     Platform,
     TouchableWithoutFeedback,
@@ -21,6 +20,7 @@ import { AuthButton } from '../../../components/Button/AuthButton';
 import Toast from 'react-native-toast-message';
 import { postRequest } from '../../../services/api/apiMethods';
 import { URLS } from '../../../services/api/urls';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ForgotPassword'>;
 

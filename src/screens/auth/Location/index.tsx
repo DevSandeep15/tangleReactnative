@@ -15,7 +15,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'Location'>;
 
 const LocationScreen: React.FC<Props> = ({ navigation, route }) => {
     console.log(route.params);
-    const { email, name, age, gender, password } = route.params;
+    const { email, name, age, gender, password, social_type } = route.params;
     const [societyName, setSocietyName] = useState('');
     const [flatNumber, setFlatNumber] = useState('');
 
@@ -50,6 +50,7 @@ const LocationScreen: React.FC<Props> = ({ navigation, route }) => {
             password,
             society_name: societyName.trim(),
             flat_number: flatNumber.trim(),
+            social_type: social_type
         });
     };
 

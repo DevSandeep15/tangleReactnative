@@ -9,6 +9,7 @@ import { DeviceEventEmitter, View } from 'react-native';
 import NotificationScreen from '../screens/dash/Notification/NotificationScreen';
 import InboxScreen from '../screens/dash/Inbox/InboxScreen';
 import ChatScreen from '../screens/dash/Inbox/ChatScreen';
+import PostDetailScreen from '../screens/dash/Post/PostDetailScreen';
 
 import WelcomeScreen from '../screens/auth/welCome';
 import LoginScreen from '../screens/auth/Login';
@@ -77,6 +78,11 @@ const MainNavigator = () => {
             <Stack.Screen
                 name="ChatDetail"
                 component={ChatScreen}
+                options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+                name="PostDetail"
+                component={PostDetailScreen}
                 options={{ animation: 'slide_from_right' }}
             />
         </Stack.Navigator>

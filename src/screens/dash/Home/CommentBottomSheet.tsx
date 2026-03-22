@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     Keyboard,
     ActivityIndicator,
+    BackHandler,
 } from 'react-native';
 import BottomSheet, {
     BottomSheetBackdrop,
@@ -128,10 +129,46 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetRef, Props>(({ postId, o
         }
     }, [postId, dispatch]);
 
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+
     useImperativeHandle(ref, () => ({
-        open: () => sheetRef.current?.snapToIndex(0),
-        close: () => sheetRef.current?.close(),
+        open: () => {
+            setIsSheetOpen(true);
+            sheetRef.current?.snapToIndex(0);
+        },
+        close: () => {
+            sheetRef.current?.close();
+            setIsSheetOpen(false);
+        },
     }));
+
+    // Handle back button on Android
+    useEffect(() => {
+        const backAction = () => {
+            if (isSheetOpen) {
+                sheetRef.current?.close();
+                setIsSheetOpen(false);
+                return true; // Prevent default behavior (navigating back or closing app)
+            }
+            return false;
+        };
+
+        const backHandler = BackHandler.addEventListener(
+            'hardwareBackPress',
+            backAction
+        );
+
+        return () => backHandler.remove();
+    }, [isSheetOpen]);
+
+    const handleSheetChange = useCallback((index: number) => {
+        if (index === -1) {
+            setIsSheetOpen(false);
+            onClose();
+        } else {
+            setIsSheetOpen(true);
+        }
+    }, [onClose]);
 
     const handleAddComment = useCallback(async (text: string) => {
         if (!postId) return;
@@ -207,7 +244,11 @@ const CommentBottomSheet = forwardRef<CommentBottomSheetRef, Props>(({ postId, o
             snapPoints={snapPoints}
             enablePanDownToClose
             backdropComponent={renderBackdrop}
-            onClose={onClose}
+            onAnimate={(from, to) => {
+                if (to === -1) setIsSheetOpen(false);
+                else setIsSheetOpen(true);
+            }}
+            onChange={handleSheetChange}
             keyboardBehavior="extend"
             keyboardBlurBehavior="restore"
             footerComponent={renderFooter}

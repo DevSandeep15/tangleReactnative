@@ -32,7 +32,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, 'CreateAvatar'>;
 const CreateAvatarScreen: React.FC<Props> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
     const dispatch = useAppDispatch()
-    const { email, name, age, gender, password, society_name, flat_number, preferred_interest } = route.params;
+    const { email, name, age, gender, password, society_name, flat_number, preferred_interest, social_type } = route.params;
     const [avatars, setAvatars] = useState<any>([])
     const [selectedAvatarId, setSelectedAvatarId] = useState<string | number | null>('1');
 
@@ -73,6 +73,7 @@ const CreateAvatarScreen: React.FC<Props> = ({ navigation, route }) => {
             emoji_name: selectedAvatar.name || 'Avatar',
             emoji: selectedAvatar.emoji || '',
             emoji_url: selectedAvatar.image || '',
+            social_type: social_type,
         });
     };
 

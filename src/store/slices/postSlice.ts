@@ -159,15 +159,14 @@ const postSlice = createSlice({
                 const { postId } = action.payload;
                 const post = state.posts.find(p => p._id === postId);
                 if (post) {
-                    // If your API returns the status, use it. For now, 
-                    // we toggle or just assume success means it happened.
-                    // We don't have isLiked in API, so we'll just 
-                    // trust the local toggle for now, but update total_likes if provided.
+                    // Explicitly toggle the liked status locally so it persists in store across screens 
+                    post.is_liked = !post.is_liked;
+
                     if (action.payload.total_likes !== undefined) {
                         post.total_likes = action.payload.total_likes;
                     } else {
-                        // Fallback logic if count isn't returned
-                        // post.total_likes += 1; // Simplified
+                        // Fallback logic if count isn't returned from API response
+                        post.total_likes = post.is_liked ? (post.total_likes || 0) + 1 : Math.max(0, (post.total_likes || 0) - 1);
                     }
                 }
                 console.log(`--- Post ${postId} Like Toggled in State ---`);

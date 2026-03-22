@@ -36,7 +36,7 @@ const interestsData: InterestItem[] = [
 
 const InterestsScreen: React.FC<Props> = ({ navigation, route }) => {
     const insets = useSafeAreaInsets();
-    const { email, name, age, gender, password, society_name, flat_number } = route.params;
+    const { email, name, age, gender, password, society_name, flat_number, social_type } = route.params;
     const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
 
     const toggleInterest = (name: string) => {
@@ -67,6 +67,7 @@ const InterestsScreen: React.FC<Props> = ({ navigation, route }) => {
             society_name,
             flat_number,
             preferred_interest: selectedInterests,
+            social_type: social_type
         });
     };
 

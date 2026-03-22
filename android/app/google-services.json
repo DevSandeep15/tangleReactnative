@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "53225538485",
+    "project_id": "tangle-4dc8f",
+    "storage_bucket": "tangle-4dc8f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:53225538485:android:55931e45e83ceb91108ffc",
+        "android_client_info": {
+          "package_name": "com.tangle.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "53225538485-g9ch43dbo1e4uui8f6qd8p6hsf94o1fb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.tangle.app",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "53225538485-psti3op4i5qbaadlh9i7bcipahqi93up.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBS2iaiRYP07Lc3k__0ThfiwYAMlAJQLs8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "53225538485-psti3op4i5qbaadlh9i7bcipahqi93up.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
